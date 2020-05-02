@@ -118,9 +118,10 @@ namespace Annoy_o_Bot
     public enum Interval
     {
         Once = 0,
-        Weekly = 1,
-        Monthly = 2,
-        Yearly = 3
+        Daily = 1,
+        Weekly = 2,
+        Monthly = 3,
+        Yearly = 4
     }
 
     //TODO: Optional assignee

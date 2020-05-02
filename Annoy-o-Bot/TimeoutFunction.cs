@@ -38,14 +38,17 @@ namespace Annoy_o_Bot
                     {
                         case Interval.Once:
                             break;
-                        case Interval.Yearly:
-                            reminder.NextReminder = reminder.NextReminder.AddYears(1);
+                        case Interval.Daily:
+                            reminder.NextReminder = reminder.NextReminder.AddDays(1);
+                            break;
+                        case Interval.Weekly:
+                            reminder.NextReminder = reminder.NextReminder.AddDays(7);
                             break;
                         case Interval.Monthly:
                             reminder.NextReminder = reminder.NextReminder.AddMonths(1);
                             break;
-                        case Interval.Weekly:
-                            reminder.NextReminder = reminder.NextReminder.AddDays(7);
+                        case Interval.Yearly:
+                            reminder.NextReminder = reminder.NextReminder.AddYears(1);
                             break;
                         default: 
                             throw new ArgumentException($"Invalid reminder interval {reminder.Reminder.Interval}");

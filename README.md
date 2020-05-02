@@ -24,9 +24,10 @@ The following intervals are supported:
 | Digit | Interval |
 | --- | --- |
 | 0 | Only once |
-| 1 | Weekly |
-| 2 | Monthly |
-| 3 | Yearly |
+| 1 | Daily |
+| 2 | Weekly |
+| 3 | Monthly |
+| 4 | Yearly |
 
 ### Example
 
@@ -36,11 +37,11 @@ The following intervals are supported:
   "message": "hello world!",
   "assignee": "johndoe",
   "date": "2020-01-01",
-  "interval": 1
+  "interval": 3
 }
 ```
 
-This sample will immediately create a new issue (because the specified start date already passed) with the title `My first reminder` and assign it to the github user `johndoe`. It will then re-create this issue every month from the date the issue is created.
+This sample will immediately create a new issue (because the specified start date already passed) with the title `My first reminder` and assign it to the github user `johndoe`. It will then re-create this issue every month on the first of the month.
 
 ## Update a reminder
 
