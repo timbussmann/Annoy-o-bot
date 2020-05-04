@@ -39,16 +39,20 @@ namespace Annoy_o_Bot
                         case Interval.Once:
                             break;
                         case Interval.Daily:
-                            reminder.NextReminder = reminder.NextReminder.AddDays(1);
+                            reminder.NextReminder =
+                                GetNextReminderDate(reminder.NextReminder, x => x.AddDays(1), now);
                             break;
                         case Interval.Weekly:
-                            reminder.NextReminder = reminder.NextReminder.AddDays(7);
+                            reminder.NextReminder =
+                                GetNextReminderDate(reminder.NextReminder, x => x.AddDays(7), now);
                             break;
                         case Interval.Monthly:
-                            reminder.NextReminder = reminder.NextReminder.AddMonths(1);
+                            reminder.NextReminder =
+                                GetNextReminderDate(reminder.NextReminder, x => x.AddMonths(1), now);
                             break;
                         case Interval.Yearly:
-                            reminder.NextReminder = reminder.NextReminder.AddYears(1);
+                            reminder.NextReminder =
+                                GetNextReminderDate(reminder.NextReminder, x => x.AddYears(1), now);
                             break;
                         default: 
                             throw new ArgumentException($"Invalid reminder interval {reminder.Reminder.Interval}");
@@ -72,6 +76,16 @@ namespace Annoy_o_Bot
 
                 await documents.AddAsync(reminder);
             }
+        }
+
+        static DateTime GetNextReminderDate(DateTime lastReminder, Func<DateTime, DateTime> incrementFunc, DateTime now)
+        {
+            DateTime next = incrementFunc(lastReminder);
+            while (next <= now)
+            {
+                next = incrementFunc(next);
+            }
+            return next;
         }
     }
 }
