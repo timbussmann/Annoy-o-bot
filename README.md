@@ -4,7 +4,8 @@ This is a simple GitHub app which can create issues on pre-defined schedules for
 
 ## Create a reminder
 
-Each reminder is represented by a unique JSON document inside the `.reminders` folder. The app only takes reminders commited to the default branch (typically `master`) into account.
+Each reminder is represented by a unique JSON document inside the `.reminders` folder. Reminders need a `.json` file ending.
+The app only takes reminders commited to the default branch (typically `master`) into account.
 
 The JSON file supports the following properties:
 
@@ -31,6 +32,7 @@ The following intervals are supported:
 
 ### Example
 
+sample content inside `.reminders/demo-reminder.json`
 ```json  
 {
   "title": "My first reminder",
@@ -50,4 +52,3 @@ Update an existing reminder document to change the scheduled interval or issue d
 ## Delete a reminder
 
 Delete the reminder document you want to remove.
-
