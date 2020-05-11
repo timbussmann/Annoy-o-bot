@@ -15,20 +15,12 @@ The JSON file supports the following properties:
 | message | string | mandatory | The issue description for the issue being created. |
 | assignee | string | optional | A `;` deliminited list of users/teams being assigned to the issue. |
 | date | string | mandatory | A [ISO 8601 standard](http://en.wikipedia.org/wiki/ISO_8601) date string indicating when the issue should be created the first time. |
-| interval | digit | mandatory | Defines the interval granularity in which a new issue should be created after the first date. See [interval description](#intervals) for more detail. |
+| interval | string | mandatory | Defines the interval granularity in which a new issue should be created after the first date. See [interval description](#intervals) for more detail. |
 | intervalStep | digit | optional | Defines how many intervals should be used before raising the next issue. This allows to customize intervals to something like "every 3 months", "every second week" and so on. |
 
 ### Intervals
 
-The following intervals are supported:
-
-| Digit | Interval |
-| --- | --- |
-| 0 | Only once |
-| 1 | Daily |
-| 2 | Weekly |
-| 3 | Monthly |
-| 4 | Yearly |
+The following intervals are supported: `"Daily"`, `"Weekly"`, `"Monthly"`, `"Yearly"`, `"Once"`.
 
 ### Example
 
@@ -39,7 +31,7 @@ sample content inside `.reminders/demo-reminder.json`
   "message": "hello world!",
   "assignee": "johndoe",
   "date": "2020-01-01",
-  "interval": 3
+  "interval": "Monthly"
 }
 ```
 
