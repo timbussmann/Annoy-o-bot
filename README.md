@@ -52,3 +52,7 @@ Update an existing reminder document to change the scheduled interval or issue d
 ## Delete a reminder
 
 Delete the reminder document you want to remove.
+
+## Icon
+
+Alarm by Adrien Coquet from the Noun Project
