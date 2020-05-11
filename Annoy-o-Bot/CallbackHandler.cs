@@ -51,9 +51,9 @@ namespace Annoy_o_Bot
                 throw;
             }
 
-            try
+            foreach (var newFile in newFiles)
             {
-                foreach (var newFile in newFiles)
+                try
                 {
                     var content = await installationClient.Repository.Content.GetAllContents(requestObject.Repository.Id, newFile);
                     var reminder = ReminderParser.Parse(content.First().Content);
@@ -66,28 +66,45 @@ namespace Annoy_o_Bot
                         NextReminder = new DateTime(reminder.Date.Ticks, DateTimeKind.Utc)
                     });
                     await installationClient.Repository.Comment.Create(
-                        requestObject.Repository.Id, 
-                        requestObject.HeadCommit.Id, 
+                        requestObject.Repository.Id,
+                        requestObject.HeadCommit.Id,
                         new NewCommitComment($"Created reminder '{reminder.Title}' for {reminder.Date:D}"));
                 }
+                catch (Exception e)
+                {
+                    log.LogError(e, "Failed to create reminder");
+                    await installationClient.Repository.Comment.Create(
+                        requestObject.Repository.Id,
+                        requestObject.HeadCommit.Id,
+                        new NewCommitComment($"Failed to create reminder {newFile}: {string.Join(Environment.NewLine, e.Message, e.StackTrace)}"));
+                    throw;
+                }
+            }
 
-                var deletedReminders = commitParser.GetDeletedReminders(requestObject.Commits);
-                foreach (var deletedReminder in deletedReminders)
+            var deletedReminders = commitParser.GetDeletedReminders(requestObject.Commits);
+            foreach (var deletedReminder in deletedReminders)
+            {
+                try
                 {
                     var documentId =
                         $"{requestObject.Installation.Id}-{requestObject.Repository.Id}-{deletedReminder.Split('/').Last()}";
                     var documentUri = UriFactory.CreateDocumentUri("annoydb", "reminders", documentId);
-                    await documentClient.DeleteDocumentAsync(documentUri, new RequestOptions(){PartitionKey = new PartitionKey(documentId) });
+                    await documentClient.DeleteDocumentAsync(documentUri, new RequestOptions() { PartitionKey = new PartitionKey(documentId) });
                     await installationClient.Repository.Comment.Create(
                         requestObject.Repository.Id,
                         requestObject.HeadCommit.Id,
                         new NewCommitComment($"Deleted reminder '{deletedReminder}'."));
                 }
-            }
-            catch (Exception e)
-            {
-                log.LogError(e, "Error");
-                return new InternalServerErrorResult();
+                catch (Exception e)
+                {
+                    log.LogError(e, "Failed to delete reminder");
+                    await installationClient.Repository.Comment.Create(
+                        requestObject.Repository.Id,
+                        requestObject.HeadCommit.Id,
+                        new NewCommitComment($"Failed to delete reminder {deletedReminder}: {string.Join(Environment.NewLine, e.Message, e.StackTrace)}"));
+                    throw;
+                }
+                
             }
 
             return new OkResult();
