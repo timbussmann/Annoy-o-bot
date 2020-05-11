@@ -56,7 +56,7 @@ namespace Annoy_o_Bot
                 foreach (var newFile in newFiles)
                 {
                     var content = await installationClient.Repository.Content.GetAllContents(requestObject.Repository.Id, newFile);
-                    var reminder = JsonConvert.DeserializeObject<Reminder>(content.First().Content);
+                    var reminder = ReminderParser.Parse(content.First().Content);
                     await documents.AddAsync(new ReminderDocument
                     {
                         Id = $"{requestObject.Installation.Id}-{requestObject.Repository.Id}-{newFile.Split('/').Last()}",
@@ -107,9 +107,9 @@ namespace Annoy_o_Bot
 
     public class Reminder
     {
-        public string Assignee { get; set; }
-        public string Message { get; set; }
         public string Title { get; set; }
+        public string Message { get; set; }
+        public string Assignee { get; set; }
         public DateTime Date { get; set; }
         public Interval Interval { get; set; }
         public int? IntervalStep { get; set; }
