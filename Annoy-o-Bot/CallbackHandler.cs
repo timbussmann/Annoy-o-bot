@@ -124,6 +124,8 @@ namespace Annoy_o_Bot
         Yearly = 4
     }
 
+
+    //TODO: support projects
     //TODO: Optional assignee
     //TODO: multiple assignees
     //TODO: Switch to JSON or YAML
