@@ -26,55 +26,70 @@ namespace Annoy_o_Bot
         {
             foreach (var reminder in dueReminders)
             {
-                // round down to the current hour
-                var now = DateTime.UtcNow.Date.AddHours(DateTime.UtcNow.Hour);
-                reminder.LastReminder = now;
-
-                //reminder.NextReminder
-                var intervalSteps = reminder.Reminder.IntervalStep ?? 1;
-                for (int i = 0; i < intervalSteps; i++)
+                try
                 {
-                    switch (reminder.Reminder.Interval)
+                    // round down to the current hour
+                    var now = DateTime.UtcNow.Date.AddHours(DateTime.UtcNow.Hour);
+                    reminder.LastReminder = now;
+
+                    //reminder.NextReminder
+                    var intervalSteps = reminder.Reminder.IntervalStep ?? 1;
+                    for (int i = 0; i < intervalSteps; i++)
                     {
-                        case Interval.Once:
-                            break;
-                        case Interval.Daily:
-                            reminder.NextReminder =
-                                GetNextReminderDate(reminder.NextReminder, x => x.AddDays(1), now);
-                            break;
-                        case Interval.Weekly:
-                            reminder.NextReminder =
-                                GetNextReminderDate(reminder.NextReminder, x => x.AddDays(7), now);
-                            break;
-                        case Interval.Monthly:
-                            reminder.NextReminder =
-                                GetNextReminderDate(reminder.NextReminder, x => x.AddMonths(1), now);
-                            break;
-                        case Interval.Yearly:
-                            reminder.NextReminder =
-                                GetNextReminderDate(reminder.NextReminder, x => x.AddYears(1), now);
-                            break;
-                        default: 
-                            throw new ArgumentException($"Invalid reminder interval {reminder.Reminder.Interval}");
+                        switch (reminder.Reminder.Interval)
+                        {
+                            case Interval.Once:
+                                break;
+                            case Interval.Daily:
+                                reminder.NextReminder =
+                                    GetNextReminderDate(reminder.NextReminder, x => x.AddDays(1), now);
+                                break;
+                            case Interval.Weekly:
+                                reminder.NextReminder =
+                                    GetNextReminderDate(reminder.NextReminder, x => x.AddDays(7), now);
+                                break;
+                            case Interval.Monthly:
+                                reminder.NextReminder =
+                                    GetNextReminderDate(reminder.NextReminder, x => x.AddMonths(1), now);
+                                break;
+                            case Interval.Yearly:
+                                reminder.NextReminder =
+                                    GetNextReminderDate(reminder.NextReminder, x => x.AddYears(1), now);
+                                break;
+                            default:
+                                throw new ArgumentException($"Invalid reminder interval {reminder.Reminder.Interval}");
+                        }
                     }
+
+                    var installationClient = await GitHubHelper.GetInstallationClient(reminder.InstallationId);
+                    var newIssue = new NewIssue(reminder.Reminder.Title)
+                    {
+                        Body = reminder.Reminder.Message,
+                    };
+                    foreach (var assignee in reminder.Reminder.Assignee.Split(';',
+                        StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        newIssue.Assignees.Add(assignee);
+                    }
+
+                    log.LogDebug($"Scheduling next due date for reminder {reminder.Id} for {reminder.NextReminder}");
+
+                    var issue = await installationClient.Issue.Create(reminder.RepositoryId, newIssue);
+
+                    log.LogInformation($"Created reminder issue based on reminder {reminder.Id}");
+
+                    await documents.AddAsync(reminder);
                 }
-
-                var installationClient = await GitHubHelper.GetInstallationClient(reminder.InstallationId);
-                var newIssue = new NewIssue(reminder.Reminder.Title)
+                catch (ApiValidationException validationException)
                 {
-                    Body = reminder.Reminder.Message,
-                };
-                foreach (var assignee in reminder.Reminder.Assignee.Split(';', StringSplitOptions.RemoveEmptyEntries))
-                {
-                    newIssue.Assignees.Add(assignee);
+                    log.LogError(validationException,$"ApiValidation exception: {validationException.Message}:{validationException.HttpResponse}");
+                    throw;
                 }
-                log.LogDebug($"Scheduling next due date for reminder {reminder.Id} for {reminder.NextReminder}");
-
-                var issue = await installationClient.Issue.Create(reminder.RepositoryId, newIssue);
-
-                log.LogInformation($"Created reminder issue based on reminder {reminder.Id}");
-
-                await documents.AddAsync(reminder);
+                catch (Exception e)
+                {
+                    log.LogError(e, $"Failed to create reminder for {reminder.Id}");
+                    throw;
+                }
             }
         }
 
@@ -91,3 +106,4 @@ namespace Annoy_o_Bot
 }
 
 //TODO unbounded query
+//TODO continue on failed issue and comment on issue.
