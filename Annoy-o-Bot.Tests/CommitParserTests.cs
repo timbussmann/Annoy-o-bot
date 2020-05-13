@@ -24,7 +24,7 @@ namespace Annoy_o_Bot.Tests
                 }
             };
 
-            var result = parser.GetDeletedReminders(commitModel);
+            var result = CommitParser.GetDeletedReminders(commitModel);
 
             var file = Assert.Single(result);
             Assert.Equal(".reminders/jsonInReminders.json", file);
@@ -60,7 +60,7 @@ namespace Annoy_o_Bot.Tests
                 },
             };
 
-            var result = parser.GetDeletedReminders(commitModel);
+            var result = CommitParser.GetDeletedReminders(commitModel);
 
             Assert.Equal(new[]
             {
@@ -93,7 +93,7 @@ namespace Annoy_o_Bot.Tests
                 }
             };
 
-            var result = parser.GetDeletedReminders(commitModel);
+            var result = CommitParser.GetDeletedReminders(commitModel);
 
             Assert.Empty(result);
         }
@@ -128,7 +128,7 @@ namespace Annoy_o_Bot.Tests
                 }
             };
 
-            var result = parser.GetDeletedReminders(commitModel);
+            var result = CommitParser.GetDeletedReminders(commitModel);
 
             var file = Assert.Single(result);
             Assert.Equal(".reminders/jsonInReminders.json", file);
@@ -157,7 +157,7 @@ namespace Annoy_o_Bot.Tests
                 }
             };
 
-            var result = parser.GetDeletedReminders(commitModel);
+            var result = CommitParser.GetDeletedReminders(commitModel);
 
             var file = Assert.Single(result);
             Assert.Equal(".reminders/jsonInReminders.json", file);
@@ -186,7 +186,7 @@ namespace Annoy_o_Bot.Tests
                 }
             };
 
-            var result = parser.GetDeletedReminders(commitModel);
+            var result = CommitParser.GetDeletedReminders(commitModel);
 
             Assert.Empty(result);
         }
@@ -211,7 +211,7 @@ namespace Annoy_o_Bot.Tests
                 }
             };
 
-            var result = parser.GetReminders(commitModel);
+            var result = CommitParser.GetReminders(commitModel);
 
             var file = Assert.Single(result);
             Assert.Equal(".reminders/jsonInReminders.json", file);
@@ -247,7 +247,7 @@ namespace Annoy_o_Bot.Tests
                 },
             };
 
-            var result = parser.GetReminders(commitModel);
+            var result = CommitParser.GetReminders(commitModel);
 
             Assert.Equal(new[]
             {
@@ -280,7 +280,7 @@ namespace Annoy_o_Bot.Tests
                 }
             };
 
-            var result = parser.GetReminders(commitModel);
+            var result = CommitParser.GetReminders(commitModel);
 
             Assert.Empty(result);
         }
@@ -308,7 +308,7 @@ namespace Annoy_o_Bot.Tests
                 }
             };
 
-            var result = parser.GetReminders(commitModel);
+            var result = CommitParser.GetReminders(commitModel);
 
             Assert.Empty(result);
         }
@@ -343,7 +343,7 @@ namespace Annoy_o_Bot.Tests
                 },
             };
 
-            var result = parser.GetReminders(commitModel);
+            var result = CommitParser.GetReminders(commitModel);
 
             var file = Assert.Single(result);
             Assert.Equal(".reminders/jsonInReminders.json", file);
@@ -384,7 +384,7 @@ namespace Annoy_o_Bot.Tests
                 },
             };
 
-            var result = parser.GetReminders(commitModel);
+            var result = CommitParser.GetReminders(commitModel);
 
             Assert.Equal(new[]
             {

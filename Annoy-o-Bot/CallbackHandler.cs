@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Web.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
@@ -24,10 +23,8 @@ namespace Annoy_o_Bot
             [CosmosDB("annoydb", "reminders", ConnectionStringSetting = "CosmosDBConnection")]IDocumentClient documentClient,
             ILogger log)
         {
-            GitHubClient installationClient = null;
+            GitHubClient installationClient;
             CallbackModel requestObject;
-            string[] newFiles;
-            var commitParser = new CommitParser();
             try
             {
                 string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
@@ -41,17 +38,15 @@ namespace Annoy_o_Bot
                     return new OkResult();
                 }
 
-                newFiles = commitParser.GetReminders(requestObject.Commits);
-
                 installationClient = await GitHubHelper.GetInstallationClient(requestObject.Installation.Id);
             }
             catch (Exception e)
             {
-                log.LogError(e, "Error at parsing inputs");
+                log.LogError(e, "Error at parsing callback input");
                 throw;
             }
 
-            foreach (var newFile in newFiles)
+            foreach (var newFile in CommitParser.GetReminders(requestObject.Commits))
             {
                 try
                 {
@@ -59,55 +54,56 @@ namespace Annoy_o_Bot
                     var reminder = ReminderParser.Parse(content.First().Content);
                     await documents.AddAsync(new ReminderDocument
                     {
-                        Id = $"{requestObject.Installation.Id}-{requestObject.Repository.Id}-{newFile.Split('/').Last()}",
+                        Id = BuildDocumentId(newFile),
                         InstallationId = requestObject.Installation.Id,
                         RepositoryId = requestObject.Repository.Id,
                         Reminder = reminder,
                         NextReminder = new DateTime(reminder.Date.Ticks, DateTimeKind.Utc)
                     });
-                    await installationClient.Repository.Comment.Create(
-                        requestObject.Repository.Id,
-                        requestObject.HeadCommit.Id,
-                        new NewCommitComment($"Created reminder '{reminder.Title}' for {reminder.Date:D}"));
+                    await CreateCommitComment($"Created reminder '{reminder.Title}' for {reminder.Date:D}");
                 }
                 catch (Exception e)
                 {
                     log.LogError(e, "Failed to create reminder");
-                    await installationClient.Repository.Comment.Create(
-                        requestObject.Repository.Id,
-                        requestObject.HeadCommit.Id,
-                        new NewCommitComment($"Failed to create reminder {newFile}: {string.Join(Environment.NewLine, e.Message, e.StackTrace)}"));
+                    await CreateCommitComment($"Failed to create reminder {newFile}: {string.Join(Environment.NewLine, e.Message, e.StackTrace)}");
                     throw;
                 }
             }
 
-            var deletedReminders = commitParser.GetDeletedReminders(requestObject.Commits);
+            var deletedReminders = CommitParser.GetDeletedReminders(requestObject.Commits);
             foreach (var deletedReminder in deletedReminders)
             {
                 try
                 {
-                    var documentId =
-                        $"{requestObject.Installation.Id}-{requestObject.Repository.Id}-{deletedReminder.Split('/').Last()}";
+                    var documentId = BuildDocumentId(deletedReminder);
                     var documentUri = UriFactory.CreateDocumentUri("annoydb", "reminders", documentId);
                     await documentClient.DeleteDocumentAsync(documentUri, new RequestOptions() { PartitionKey = new PartitionKey(documentId) });
-                    await installationClient.Repository.Comment.Create(
-                        requestObject.Repository.Id,
-                        requestObject.HeadCommit.Id,
-                        new NewCommitComment($"Deleted reminder '{deletedReminder}'."));
+                    await CreateCommitComment($"Deleted reminder '{deletedReminder}'");
                 }
                 catch (Exception e)
                 {
                     log.LogError(e, "Failed to delete reminder");
-                    await installationClient.Repository.Comment.Create(
-                        requestObject.Repository.Id,
-                        requestObject.HeadCommit.Id,
-                        new NewCommitComment($"Failed to delete reminder {deletedReminder}: {string.Join(Environment.NewLine, e.Message, e.StackTrace)}"));
+                    await CreateCommitComment(
+                        $"Failed to delete reminder {deletedReminder}: {string.Join(Environment.NewLine, e.Message, e.StackTrace)}");
                     throw;
                 }
                 
             }
 
             return new OkResult();
+
+            string BuildDocumentId(string fileName)
+            {
+                return $"{requestObject.Installation.Id}-{requestObject.Repository.Id}-{fileName.Split('/').Last()}";
+            }
+
+            Task CreateCommitComment(string comment)
+            {
+                return installationClient.Repository.Comment.Create(
+                    requestObject.Repository.Id,
+                    requestObject.HeadCommit.Id,
+                    new NewCommitComment(comment));
+            }
         }
     }
 
@@ -143,10 +139,6 @@ namespace Annoy_o_Bot
 
 
     //TODO: support projects
-    //TODO: Optional assignee
-    //TODO: multiple assignees
-    //TODO: Switch to JSON or YAML
-    //TODO: only-once (auto-delete reminder?)
-    //TODO: what format to use for provided datetime format?
+    //TODO: Switch to YAML
 
 }

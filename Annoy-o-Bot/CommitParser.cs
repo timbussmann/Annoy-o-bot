@@ -5,7 +5,7 @@ namespace Annoy_o_Bot
 {
     public class CommitParser
     {
-        public string[] GetReminders(CallbackModel.CommitModel[] commits)
+        public static string[] GetReminders(CallbackModel.CommitModel[] commits)
         {
             return commits.Aggregate(new HashSet<string>(), (added, model) =>
             {
@@ -30,7 +30,7 @@ namespace Annoy_o_Bot
                 .ToArray();
         }
 
-        public string[] GetDeletedReminders(CallbackModel.CommitModel[] commits)
+        public static string[] GetDeletedReminders(CallbackModel.CommitModel[] commits)
         {
             return commits.Aggregate((removed: new HashSet<string>(), @new: new HashSet<string>()), (tuple, model) =>
                 {
