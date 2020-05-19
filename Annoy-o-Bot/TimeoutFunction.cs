@@ -32,34 +32,7 @@ namespace Annoy_o_Bot
                     var now = DateTime.UtcNow.Date.AddHours(DateTime.UtcNow.Hour);
                     reminder.LastReminder = now;
 
-                    //reminder.NextReminder
-                    var intervalSteps = reminder.Reminder.IntervalStep ?? 1;
-                    for (int i = 0; i < intervalSteps; i++)
-                    {
-                        switch (reminder.Reminder.Interval)
-                        {
-                            case Interval.Once:
-                                break;
-                            case Interval.Daily:
-                                reminder.NextReminder =
-                                    GetNextReminderDate(reminder.NextReminder, x => x.AddDays(1), now);
-                                break;
-                            case Interval.Weekly:
-                                reminder.NextReminder =
-                                    GetNextReminderDate(reminder.NextReminder, x => x.AddDays(7), now);
-                                break;
-                            case Interval.Monthly:
-                                reminder.NextReminder =
-                                    GetNextReminderDate(reminder.NextReminder, x => x.AddMonths(1), now);
-                                break;
-                            case Interval.Yearly:
-                                reminder.NextReminder =
-                                    GetNextReminderDate(reminder.NextReminder, x => x.AddYears(1), now);
-                                break;
-                            default:
-                                throw new ArgumentException($"Invalid reminder interval {reminder.Reminder.Interval}");
-                        }
-                    }
+                    CalculateNextReminder(reminder, now);
 
                     var installationClient = await GitHubHelper.GetInstallationClient(reminder.InstallationId);
                     var newIssue = new NewIssue(reminder.Reminder.Title)
@@ -93,14 +66,45 @@ namespace Annoy_o_Bot
             }
         }
 
-        static DateTime GetNextReminderDate(DateTime lastReminder, Func<DateTime, DateTime> incrementFunc, DateTime now)
+        public static void CalculateNextReminder(ReminderDocument reminder, DateTime now)
         {
-            DateTime next = incrementFunc(lastReminder);
-            while (next <= now)
+            var intervalSteps = Math.Max(reminder.Reminder.IntervalStep ?? 1, 1);
+            for (int i = 0; i < intervalSteps; i++)
             {
-                next = incrementFunc(next);
+                switch (reminder.Reminder.Interval)
+                {
+                    case Interval.Once:
+                        break;
+                    case Interval.Daily:
+                        reminder.NextReminder =
+                            GetNextReminderDate(x => x.AddDays(intervalSteps));
+                        break;
+                    case Interval.Weekly:
+                        reminder.NextReminder =
+                            GetNextReminderDate(x => x.AddDays(7 * intervalSteps));
+                        break;
+                    case Interval.Monthly:
+                        reminder.NextReminder =
+                            GetNextReminderDate(x => x.AddMonths(intervalSteps));
+                        break;
+                    case Interval.Yearly:
+                        reminder.NextReminder =
+                            GetNextReminderDate(x => x.AddYears(intervalSteps));
+                        break;
+                    default:
+                        throw new ArgumentException($"Invalid reminder interval {reminder.Reminder.Interval}");
+                }
             }
-            return next;
+
+            DateTime GetNextReminderDate(Func<DateTime, DateTime> incrementFunc)
+            {
+                var next = reminder.NextReminder;
+                while (next <= now)
+                {
+                    next = incrementFunc(next);
+                }
+                return next;
+            }
         }
     }
 }
