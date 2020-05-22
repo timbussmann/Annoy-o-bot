@@ -55,13 +55,11 @@ namespace Annoy_o_Bot
                 }
                 catch (ApiValidationException validationException)
                 {
-                    log.LogError(validationException,$"ApiValidation exception: {validationException.Message}:{validationException.HttpResponse}");
-                    throw;
+                    log.LogCritical(validationException,$"ApiValidation on reminder '{reminder.Id}' exception: {validationException.Message}:{validationException.HttpResponse}");
                 }
                 catch (Exception e)
                 {
-                    log.LogError(e, $"Failed to create reminder for {reminder.Id}");
-                    throw;
+                    log.LogCritical(e, $"Failed to create reminder for {reminder.Id}");
                 }
             }
         }
@@ -110,4 +108,3 @@ namespace Annoy_o_Bot
 }
 
 //TODO unbounded query
-//TODO continue on failed issue and comment on issue.
