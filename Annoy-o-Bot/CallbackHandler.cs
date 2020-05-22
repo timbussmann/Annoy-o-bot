@@ -58,7 +58,8 @@ namespace Annoy_o_Bot
                         InstallationId = requestObject.Installation.Id,
                         RepositoryId = requestObject.Repository.Id,
                         Reminder = reminder,
-                        NextReminder = new DateTime(reminder.Date.Ticks, DateTimeKind.Utc)
+                        NextReminder = new DateTime(reminder.Date.Ticks, DateTimeKind.Utc),
+                        Path = newFile
                     });
                     await CreateCommitComment($"Created reminder '{reminder.Title}' for {reminder.Date:D}");
                 }
@@ -116,6 +117,7 @@ namespace Annoy_o_Bot
         public long RepositoryId { get; set; }
         public DateTime LastReminder { get; set; }
         public DateTime NextReminder { get; set; }
+        public string Path { get; set; }
     }
 
     public class Reminder
