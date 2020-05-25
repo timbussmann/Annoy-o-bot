@@ -26,7 +26,7 @@ namespace Annoy_o_Bot
 
                 return added;
             })
-                .Where(x => x.StartsWith(".reminders/") && x.EndsWith(".json"))
+                .Where(x => x.StartsWith(".reminders/"))
                 .ToArray();
         }
 
@@ -57,7 +57,7 @@ namespace Annoy_o_Bot
                     return tuple;
                 })
                 .removed
-                .Where(x => x.StartsWith(".reminders/") && x.EndsWith(".json"))
+                .Where(x => x.StartsWith(".reminders/"))
                 .ToArray();
 
         }

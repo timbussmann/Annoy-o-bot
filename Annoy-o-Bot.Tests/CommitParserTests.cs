@@ -26,8 +26,10 @@ namespace Annoy_o_Bot.Tests
 
             var result = CommitParser.GetDeletedReminders(commitModel);
 
-            var file = Assert.Single(result);
-            Assert.Equal(".reminders/jsonInReminders.json", file);
+            Assert.Equal(3, result.Length);
+            Assert.Contains(".reminders/jsonInReminders.json", result);
+            Assert.Contains(".reminders/fileWithoutFiletype", result);
+            Assert.Contains(".reminders/markdownInReminders.md", result);
         }
 
         [Fact]
@@ -213,8 +215,11 @@ namespace Annoy_o_Bot.Tests
 
             var result = CommitParser.GetReminders(commitModel);
 
-            var file = Assert.Single(result);
-            Assert.Equal(".reminders/jsonInReminders.json", file);
+            Assert.Equal(3, result.Length);
+            Assert.Contains(".reminders/jsonInReminders.json", result);
+            Assert.Contains(".reminders/fileWithoutFiletype", result);
+            Assert.Contains(".reminders/markdownInReminders.md", result);
+
         }
 
         [Fact]

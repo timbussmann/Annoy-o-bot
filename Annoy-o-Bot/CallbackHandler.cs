@@ -47,6 +47,11 @@ namespace Annoy_o_Bot
 
             foreach (var newFile in CommitParser.GetReminders(requestObject.Commits))
             {
+                if (!newFile.EndsWith(".json"))
+                {
+                    continue;
+                }
+
                 try
                 {
                     var content = await installationClient.Repository.Content.GetAllContents(requestObject.Repository.Id, newFile);
@@ -73,6 +78,11 @@ namespace Annoy_o_Bot
             var deletedReminders = CommitParser.GetDeletedReminders(requestObject.Commits);
             foreach (var deletedReminder in deletedReminders)
             {
+                if (!deletedReminder.EndsWith(".json"))
+                {
+                    continue;
+                }
+
                 try
                 {
                     var documentId = BuildDocumentId(deletedReminder);
