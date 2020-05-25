@@ -1,8 +1,6 @@
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reflection.Metadata.Ecma335;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
@@ -18,8 +16,6 @@ namespace Annoy_o_Bot
 {
     public static class CallbackHandler
     {
-        static Lazy<JsonReminderParser> jsonReminderParser = new Lazy<JsonReminderParser>(() => new JsonReminderParser());
-
         [FunctionName("Callback")]
         public static async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
@@ -53,17 +49,12 @@ namespace Annoy_o_Bot
             {
                 try
                 {
-                    //TODO use C# 8 switch expression
-                    ReminderParser reminderParser;
-                    switch (newFile.Split('.').LastOrDefault())
+                    var reminderParser = GetReminderParser(newFile);
+                    if (reminderParser == null)
                     {
-                        case "json":
-                            reminderParser = jsonReminderParser.Value;
-                            break;
-                        default:
-                            continue;
+                        // unsupported file type
+                        continue;
                     }
-
                     var content = await installationClient.Repository.Content.GetAllContents(requestObject.Repository.Id, newFile);
                     var reminder = reminderParser.Parse(content.First().Content);
                     await documents.AddAsync(new ReminderDocument
@@ -88,8 +79,10 @@ namespace Annoy_o_Bot
             var deletedReminders = CommitParser.GetDeletedReminders(requestObject.Commits);
             foreach (var deletedReminder in deletedReminders)
             {
-                if (!deletedReminder.EndsWith(".json"))
+                var reminderParser = GetReminderParser(deletedReminder);
+                if (reminderParser == null)
                 {
+                    // unsupported file type
                     continue;
                 }
 
@@ -125,6 +118,25 @@ namespace Annoy_o_Bot
                     new NewCommitComment(comment));
             }
         }
+
+        private static ReminderParser GetReminderParser(string filePath)
+        {
+            //TODO use C# 8 switch expression
+            if (filePath.EndsWith(".json"))
+            {
+                return JsonReminderParser.Value;
+            }
+
+            if (filePath.EndsWith(".yaml"))
+            {
+                return YamlReminderParser.Value;
+            }
+
+            return null;
+        }
+
+        static readonly Lazy<JsonReminderParser> JsonReminderParser = new Lazy<JsonReminderParser>(() => new JsonReminderParser());
+        static readonly Lazy<YamlReminderParser> YamlReminderParser = new Lazy<YamlReminderParser>(() => new YamlReminderParser());
     }
 
     public class ReminderDocument

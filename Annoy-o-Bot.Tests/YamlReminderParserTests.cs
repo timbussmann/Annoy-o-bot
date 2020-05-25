@@ -18,13 +18,14 @@ namespace Annoy_o_Bot.Tests
         };
 
         readonly Serializer serializer = new Serializer();
+        readonly YamlReminderParser yamlReminderParser = new YamlReminderParser();
 
         [Fact]
         void Should_parse_reminder_correctly()
         {
             var input = serializer.Serialize(reminder);
 
-            var result = YamlReminderParser.Parse(input);
+            var result = yamlReminderParser.Parse(input);
 
             Assert.Equal("The title", result.Title);
             Assert.Equal("A message with [a markdown link](/somewhere)", result.Message);
@@ -43,7 +44,7 @@ namespace Annoy_o_Bot.Tests
             reminder.Title = title;
             var input = serializer.Serialize(reminder);
 
-            var ex = Assert.Throws<ArgumentException>(() => YamlReminderParser.Parse(input));
+            var ex = Assert.Throws<ArgumentException>(() => yamlReminderParser.Parse(input));
             Assert.Contains("A reminder must provide a non-empty Title property", ex.Message);
         }
 
@@ -58,7 +59,7 @@ namespace Annoy_o_Bot.Tests
             reminder.Interval = interval;
             var input = serializer.Serialize(reminder);
 
-            var result = YamlReminderParser.Parse(input);
+            var result = yamlReminderParser.Parse(input);
 
             Assert.Equal(interval, result.Interval);
         }
@@ -74,7 +75,7 @@ namespace Annoy_o_Bot.Tests
             reminder.Interval = interval;
             var input = serializer.Serialize(reminder);
 
-            var result = YamlReminderParser.Parse(input);
+            var result = yamlReminderParser.Parse(input);
 
             Assert.Equal(interval, result.Interval);
         }

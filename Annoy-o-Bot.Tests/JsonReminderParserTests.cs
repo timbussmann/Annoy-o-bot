@@ -16,12 +16,14 @@ namespace Annoy_o_Bot.Tests
             IntervalStep = 5
         };
 
+        readonly JsonReminderParser jsonReminderParser = new JsonReminderParser();
+
         [Fact]
         void Should_parse_reminder_correctly()
         {
             var input = JsonConvert.SerializeObject(reminder);
 
-            var result = JsonReminderParser.Parse(input);
+            var result = jsonReminderParser.Parse(input);
 
             Assert.Equal("The title", result.Title);
             Assert.Equal("A message", result.Message);
@@ -40,7 +42,7 @@ namespace Annoy_o_Bot.Tests
             reminder.Title = title;
             var input = JsonConvert.SerializeObject(reminder);
 
-            var ex = Assert.Throws<ArgumentException>(() => JsonReminderParser.Parse(input));
+            var ex = Assert.Throws<ArgumentException>(() => jsonReminderParser.Parse(input));
             Assert.Contains("A reminder must provide a non-empty Title property", ex.Message);
         }
 
@@ -55,7 +57,7 @@ namespace Annoy_o_Bot.Tests
             reminder.Interval = interval;
             var input = JsonConvert.SerializeObject(reminder);
 
-            var result = JsonReminderParser.Parse(input);
+            var result = jsonReminderParser.Parse(input);
 
             Assert.Equal(interval, result.Interval);
         }
@@ -71,7 +73,7 @@ namespace Annoy_o_Bot.Tests
             reminder.Interval = interval;
             var input = JsonConvert.SerializeObject(reminder, new StringEnumConverter(false));
 
-            var result = JsonReminderParser.Parse(input);
+            var result = jsonReminderParser.Parse(input);
 
             Assert.Equal(interval, result.Interval);
         }
