@@ -23,9 +23,9 @@ namespace Annoy_o_Bot
         }
     }
 
-    public class YamlReminderParser
+    public class YamlReminderParser : ReminderParser
     {
-        public static Reminder Parse(string documentContent)
+        public override Reminder Parse(string documentContent)
         {
             Deserializer deserializer = new Deserializer();
             var reminder = deserializer.Deserialize<Reminder>(documentContent);
