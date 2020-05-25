@@ -9,7 +9,7 @@ namespace Annoy_o_Bot.Tests
         public void NewFileAdded()
         {
             var parser = new RequestParser();
-            var result = parser.Parse(File.ReadAllText("requests/fileAdded.json"));
+            var result = RequestParser.ParseJson(File.ReadAllText("requests/fileAdded.json"));
 
             Assert.Equal("refs/heads/master", result.Ref);
 
@@ -29,7 +29,7 @@ namespace Annoy_o_Bot.Tests
         public void MultiCommit()
         {
             var parser = new RequestParser();
-            var result = parser.Parse(File.ReadAllText("requests/multiCommitFileHistory.json"));
+            var result = RequestParser.ParseJson(File.ReadAllText("requests/multiCommitFileHistory.json"));
 
             Assert.Equal(4, result.Commits.Length);
 

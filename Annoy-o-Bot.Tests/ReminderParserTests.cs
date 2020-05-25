@@ -21,7 +21,7 @@ namespace Annoy_o_Bot.Tests
         {
             var input = JsonConvert.SerializeObject(reminder);
 
-            var result = ReminderParser.Parse(input);
+            var result = ReminderParser.ParseJson(input);
 
             Assert.Equal("The title", result.Title);
             Assert.Equal("A message", result.Message);
@@ -40,7 +40,7 @@ namespace Annoy_o_Bot.Tests
             reminder.Title = title;
             var input = JsonConvert.SerializeObject(reminder);
 
-            var ex = Assert.Throws<ArgumentException>(() => ReminderParser.Parse(input));
+            var ex = Assert.Throws<ArgumentException>(() => ReminderParser.ParseJson(input));
             Assert.Contains("A reminder must provide a non-empty Title property", ex.Message);
         }
 
@@ -55,7 +55,7 @@ namespace Annoy_o_Bot.Tests
             reminder.Interval = interval;
             var input = JsonConvert.SerializeObject(reminder);
 
-            var result = ReminderParser.Parse(input);
+            var result = ReminderParser.ParseJson(input);
 
             Assert.Equal(interval, result.Interval);
         }
@@ -71,7 +71,7 @@ namespace Annoy_o_Bot.Tests
             reminder.Interval = interval;
             var input = JsonConvert.SerializeObject(reminder, new StringEnumConverter(false));
 
-            var result = ReminderParser.Parse(input);
+            var result = ReminderParser.ParseJson(input);
 
             Assert.Equal(interval, result.Interval);
         }

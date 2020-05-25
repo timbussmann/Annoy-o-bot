@@ -29,8 +29,7 @@ namespace Annoy_o_Bot
             {
                 string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
                 //dynamic data = JsonConvert.DeserializeObject(requestBody);
-                var requestParser = new RequestParser();
-                requestObject = requestParser.Parse(requestBody);
+                requestObject = RequestParser.ParseJson(requestBody);
 
                 if (!requestObject.Ref.EndsWith($"/{requestObject.Repository.DefaultBranch}"))
                 {
@@ -51,7 +50,7 @@ namespace Annoy_o_Bot
                 try
                 {
                     var content = await installationClient.Repository.Content.GetAllContents(requestObject.Repository.Id, newFile);
-                    var reminder = ReminderParser.Parse(content.First().Content);
+                    var reminder = ReminderParser.ParseJson(content.First().Content);
                     await documents.AddAsync(new ReminderDocument
                     {
                         Id = BuildDocumentId(newFile),
