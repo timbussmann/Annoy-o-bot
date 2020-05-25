@@ -50,7 +50,7 @@ namespace Annoy_o_Bot
                 try
                 {
                     var content = await installationClient.Repository.Content.GetAllContents(requestObject.Repository.Id, newFile);
-                    var reminder = ReminderParser.ParseJson(content.First().Content);
+                    var reminder = JsonReminderParser.Parse(content.First().Content);
                     await documents.AddAsync(new ReminderDocument
                     {
                         Id = BuildDocumentId(newFile),
@@ -140,6 +140,5 @@ namespace Annoy_o_Bot
 
 
     //TODO: support projects
-    //TODO: Switch to YAML
 
 }

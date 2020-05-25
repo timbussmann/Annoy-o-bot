@@ -1,13 +1,14 @@
 ﻿using System;
-using Newtonsoft.Json;
+using YamlDotNet.Serialization;
 
 namespace Annoy_o_Bot
 {
-    public class ReminderParser
+    public class YamlReminderParser
     {
-        public static Reminder ParseJson(string documentContent)
+        public static Reminder Parse(string documentContent)
         {
-            var reminder = JsonConvert.DeserializeObject<Reminder>(documentContent);
+            Deserializer deserializer = new Deserializer();
+            var reminder = deserializer.Deserialize<Reminder>(documentContent);
 
             if (string.IsNullOrWhiteSpace(reminder.Title))
             {
