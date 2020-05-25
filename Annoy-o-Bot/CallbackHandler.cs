@@ -122,12 +122,12 @@ namespace Annoy_o_Bot
         private static ReminderParser GetReminderParser(string filePath)
         {
             //TODO use C# 8 switch expression
-            if (filePath.EndsWith(".json"))
+            if (filePath.EndsWith(".json", StringComparison.InvariantCultureIgnoreCase))
             {
                 return JsonReminderParser.Value;
             }
 
-            if (filePath.EndsWith(".yaml"))
+            if (filePath.EndsWith(".yaml", StringComparison.InvariantCultureIgnoreCase))
             {
                 return YamlReminderParser.Value;
             }
