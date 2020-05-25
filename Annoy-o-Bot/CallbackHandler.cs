@@ -1,6 +1,8 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection.Metadata.Ecma335;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
@@ -16,6 +18,8 @@ namespace Annoy_o_Bot
 {
     public static class CallbackHandler
     {
+        static Lazy<JsonReminderParser> jsonReminderParser = new Lazy<JsonReminderParser>(() => new JsonReminderParser());
+
         [FunctionName("Callback")]
         public static async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
@@ -47,15 +51,21 @@ namespace Annoy_o_Bot
 
             foreach (var newFile in CommitParser.GetReminders(requestObject.Commits))
             {
-                if (!newFile.EndsWith(".json"))
-                {
-                    continue;
-                }
-
                 try
                 {
+                    //TODO use C# 8 switch expression
+                    ReminderParser reminderParser;
+                    switch (newFile.Split('.').LastOrDefault())
+                    {
+                        case "json":
+                            reminderParser = jsonReminderParser.Value;
+                            break;
+                        default:
+                            continue;
+                    }
+
                     var content = await installationClient.Repository.Content.GetAllContents(requestObject.Repository.Id, newFile);
-                    var reminder = JsonReminderParser.Parse(content.First().Content);
+                    var reminder = reminderParser.Parse(content.First().Content);
                     await documents.AddAsync(new ReminderDocument
                     {
                         Id = BuildDocumentId(newFile),
