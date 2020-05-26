@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Annoy_o_Bot.Tests
 {
-    public class ReminderParserTests
+    public class JsonReminderParserTests
     {
         Reminder reminder = new Reminder
         {
@@ -13,21 +13,25 @@ namespace Annoy_o_Bot.Tests
             Message = "A message",
             Assignee = "SomeUserHandle;AnotherUserHandle",
             Interval = Interval.Monthly,
-            IntervalStep = 5
+            IntervalStep = 5,
+            Date = new DateTime(2010, 11, 12)
         };
+
+        readonly JsonReminderParser jsonReminderParser = new JsonReminderParser();
 
         [Fact]
         void Should_parse_reminder_correctly()
         {
             var input = JsonConvert.SerializeObject(reminder);
 
-            var result = ReminderParser.Parse(input);
+            var result = jsonReminderParser.Parse(input);
 
             Assert.Equal("The title", result.Title);
             Assert.Equal("A message", result.Message);
             Assert.Equal("SomeUserHandle;AnotherUserHandle", result.Assignee);
             Assert.Equal(Interval.Monthly, result.Interval);
             Assert.Equal(5, result.IntervalStep);
+            Assert.Equal(new DateTime(2010, 11, 12), reminder.Date);
         }
 
         [Theory]
@@ -40,7 +44,7 @@ namespace Annoy_o_Bot.Tests
             reminder.Title = title;
             var input = JsonConvert.SerializeObject(reminder);
 
-            var ex = Assert.Throws<ArgumentException>(() => ReminderParser.Parse(input));
+            var ex = Assert.Throws<ArgumentException>(() => jsonReminderParser.Parse(input));
             Assert.Contains("A reminder must provide a non-empty Title property", ex.Message);
         }
 
@@ -55,7 +59,7 @@ namespace Annoy_o_Bot.Tests
             reminder.Interval = interval;
             var input = JsonConvert.SerializeObject(reminder);
 
-            var result = ReminderParser.Parse(input);
+            var result = jsonReminderParser.Parse(input);
 
             Assert.Equal(interval, result.Interval);
         }
@@ -71,7 +75,7 @@ namespace Annoy_o_Bot.Tests
             reminder.Interval = interval;
             var input = JsonConvert.SerializeObject(reminder, new StringEnumConverter(false));
 
-            var result = ReminderParser.Parse(input);
+            var result = jsonReminderParser.Parse(input);
 
             Assert.Equal(interval, result.Interval);
         }

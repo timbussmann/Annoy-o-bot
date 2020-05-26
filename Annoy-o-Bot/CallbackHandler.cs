@@ -29,8 +29,7 @@ namespace Annoy_o_Bot
             {
                 string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
                 //dynamic data = JsonConvert.DeserializeObject(requestBody);
-                var requestParser = new RequestParser();
-                requestObject = requestParser.Parse(requestBody);
+                requestObject = RequestParser.ParseJson(requestBody);
 
                 if (!requestObject.Ref.EndsWith($"/{requestObject.Repository.DefaultBranch}"))
                 {
@@ -50,8 +49,14 @@ namespace Annoy_o_Bot
             {
                 try
                 {
+                    var reminderParser = GetReminderParser(newFile);
+                    if (reminderParser == null)
+                    {
+                        // unsupported file type
+                        continue;
+                    }
                     var content = await installationClient.Repository.Content.GetAllContents(requestObject.Repository.Id, newFile);
-                    var reminder = ReminderParser.Parse(content.First().Content);
+                    var reminder = reminderParser.Parse(content.First().Content);
                     await documents.AddAsync(new ReminderDocument
                     {
                         Id = BuildDocumentId(newFile),
@@ -74,6 +79,13 @@ namespace Annoy_o_Bot
             var deletedReminders = CommitParser.GetDeletedReminders(requestObject.Commits);
             foreach (var deletedReminder in deletedReminders)
             {
+                var reminderParser = GetReminderParser(deletedReminder);
+                if (reminderParser == null)
+                {
+                    // unsupported file type
+                    continue;
+                }
+
                 try
                 {
                     var documentId = BuildDocumentId(deletedReminder);
@@ -106,6 +118,25 @@ namespace Annoy_o_Bot
                     new NewCommitComment(comment));
             }
         }
+
+        private static ReminderParser GetReminderParser(string filePath)
+        {
+            //TODO use C# 8 switch expression
+            if (filePath.EndsWith(".json", StringComparison.InvariantCultureIgnoreCase))
+            {
+                return JsonReminderParser.Value;
+            }
+
+            if (filePath.EndsWith(".yaml", StringComparison.InvariantCultureIgnoreCase))
+            {
+                return YamlReminderParser.Value;
+            }
+
+            return null;
+        }
+
+        static readonly Lazy<JsonReminderParser> JsonReminderParser = new Lazy<JsonReminderParser>(() => new JsonReminderParser());
+        static readonly Lazy<YamlReminderParser> YamlReminderParser = new Lazy<YamlReminderParser>(() => new YamlReminderParser());
     }
 
     public class ReminderDocument
@@ -120,27 +151,6 @@ namespace Annoy_o_Bot
         public string Path { get; set; }
     }
 
-    public class Reminder
-    {
-        public string Title { get; set; }
-        public string Message { get; set; }
-        public string Assignee { get; set; }
-        public DateTime Date { get; set; }
-        public Interval Interval { get; set; }
-        public int? IntervalStep { get; set; }
-    }
-
-    public enum Interval
-    {
-        Once = 0,
-        Daily = 1,
-        Weekly = 2,
-        Monthly = 3,
-        Yearly = 4
-    }
-
-
     //TODO: support projects
-    //TODO: Switch to YAML
 
 }

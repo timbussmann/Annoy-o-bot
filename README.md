@@ -4,7 +4,7 @@ This is a simple GitHub app which can create issues on pre-defined schedules for
 
 ## Create a reminder
 
-Each reminder is represented by a unique JSON document inside the `.reminders` folder. Reminders need a `.json` file ending.
+Each reminder is represented by a unique JSON or YAML document inside the `.reminders` folder. Reminders need a `.json` or `.yaml` file ending.
 The app only takes reminders commited to the default branch (typically `master`) into account.
 
 The JSON file supports the following properties:
@@ -20,11 +20,20 @@ The JSON file supports the following properties:
 
 ### Intervals
 
-The following intervals are supported: `"Daily"`, `"Weekly"`, `"Monthly"`, `"Yearly"`, `"Once"`.
+The following intervals are supported: `Daily`, `Weekly`, `Monthly`, `Yearly`, `Once`.
 
 ### Example
 
-sample content inside `.reminders/demo-reminder.json`
+As YAML: `.reminders/demo-reminder.yaml`
+```yaml
+Title: My first reminder
+Message: hello world!
+Assignee: johndoe
+Date: 2020-01-01
+Interval: Monthly
+```
+
+As JSON: `.reminders/demo-reminder.json`
 ```json  
 {
   "title": "My first reminder",
