@@ -14,7 +14,8 @@ namespace Annoy_o_Bot.Tests
             Message = "A message with [a markdown link](/somewhere)",
             Assignee = "SomeUserHandle;AnotherUserHandle",
             Interval = Interval.Monthly,
-            IntervalStep = 5
+            IntervalStep = 5,
+            Date = new DateTime(2010, 11, 12)
         };
 
         readonly Serializer serializer = new Serializer();
@@ -32,6 +33,7 @@ namespace Annoy_o_Bot.Tests
             Assert.Equal("SomeUserHandle;AnotherUserHandle", result.Assignee);
             Assert.Equal(Interval.Monthly, result.Interval);
             Assert.Equal(5, result.IntervalStep);
+            Assert.Equal(new DateTime(2010, 11, 12), reminder.Date);
         }
 
         [Theory]
