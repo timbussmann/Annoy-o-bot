@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
@@ -39,8 +40,8 @@ namespace Annoy_o_Bot
                     {
                         Body = reminder.Reminder.Message,
                     };
-                    foreach (var assignee in reminder.Reminder.Assignee.Split(';',
-                        StringSplitOptions.RemoveEmptyEntries))
+                    foreach (var assignee in reminder.Reminder.Assignee?.Split(';',
+                        StringSplitOptions.RemoveEmptyEntries) ?? Enumerable.Empty<string>())
                     {
                         newIssue.Assignees.Add(assignee);
                     }
