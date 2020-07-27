@@ -10,6 +10,7 @@ namespace Annoy_o_Bot
         public string Ref { get; set; }
         [JsonProperty("head_commit")]
         public CommitModel HeadCommit { get; set; }
+        public PusherModel Pusher { get; set; }
 
         public class CommitModel
         {
@@ -29,6 +30,11 @@ namespace Annoy_o_Bot
             public long Id { get; set; }
             [JsonProperty("default_branch")]
             public string DefaultBranch { get; set; }
+        }
+
+        public class PusherModel
+        {
+            public string Name { get; set; }
         }
     }
 }

@@ -22,6 +22,8 @@ namespace Annoy_o_Bot.Tests
             Assert.Equal("ba7c6f17f5beaafc603eca52b864356848865fec", commit.Id);
             var addedFile = Assert.Single(commit.Added);
             Assert.Equal(".reminder/testReminder.json", addedFile);
+
+            Assert.Equal("timbussmann", result.Pusher.Name);
             
         }
 
