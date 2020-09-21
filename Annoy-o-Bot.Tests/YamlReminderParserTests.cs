@@ -37,6 +37,21 @@ namespace Annoy_o_Bot.Tests
         }
 
         [Theory]
+        [InlineData("NO")]
+        [InlineData("Null", Skip = "broken")]
+        void Should_parse_yaml_keywords_as_strings(string keyword)
+        {
+            var result = yamlReminderParser.Parse(
+$@"Title: {keyword}
+Message: {keyword}
+Assignee: {keyword}");
+
+            Assert.Equal(keyword, result.Title);
+            Assert.Equal(keyword, result.Message);
+            Assert.Equal(keyword, result.Assignee);
+        }
+
+        [Theory]
         [InlineData("")]
         [InlineData(" ")]
         [InlineData("  ")]

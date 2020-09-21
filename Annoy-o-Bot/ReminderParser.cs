@@ -27,7 +27,7 @@ namespace Annoy_o_Bot
     {
         public override Reminder Parse(string documentContent)
         {
-            Deserializer deserializer = new Deserializer();
+            var deserializer = new Deserializer();
             var reminder = deserializer.Deserialize<Reminder>(documentContent);
 
             if (string.IsNullOrWhiteSpace(reminder.Title))
