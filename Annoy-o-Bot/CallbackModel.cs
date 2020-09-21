@@ -1,3 +1,5 @@
+#nullable disable
+
 using Newtonsoft.Json;
 
 namespace Annoy_o_Bot

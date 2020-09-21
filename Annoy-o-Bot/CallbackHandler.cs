@@ -119,7 +119,7 @@ namespace Annoy_o_Bot
             }
         }
 
-        private static ReminderParser GetReminderParser(string filePath)
+        private static ReminderParser? GetReminderParser(string filePath)
         {
             //TODO use C# 8 switch expression
             if (filePath.EndsWith(".json", StringComparison.InvariantCultureIgnoreCase))
@@ -141,14 +141,15 @@ namespace Annoy_o_Bot
 
     public class ReminderDocument
     {
+        // assigning null using the null-forgiving operator because the value will always be set
         [JsonProperty("id")]
-        public string Id { get; set; }
-        public Reminder Reminder { get; set; }
+        public string Id { get; set; } = null!;
+        public Reminder Reminder { get; set; } = null!;
         public long InstallationId { get; set; }
         public long RepositoryId { get; set; }
         public DateTime LastReminder { get; set; }
         public DateTime NextReminder { get; set; }
-        public string Path { get; set; }
+        public string Path { get; set; } = null!;
     }
 
     //TODO: support projects
