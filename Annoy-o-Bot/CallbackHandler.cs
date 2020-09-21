@@ -128,7 +128,6 @@ namespace Annoy_o_Bot
 
         private static ReminderParser? GetReminderParser(string filePath)
         {
-            //TODO use C# 8 switch expression
             if (filePath.EndsWith(".json", StringComparison.InvariantCultureIgnoreCase))
             {
                 return JsonReminderParser.Value;
