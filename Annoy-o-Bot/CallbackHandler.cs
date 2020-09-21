@@ -23,6 +23,13 @@ namespace Annoy_o_Bot
             [CosmosDB("annoydb", "reminders", ConnectionStringSetting = "CosmosDBConnection")]IDocumentClient documentClient,
             ILogger log)
         {
+            if (!req.Headers.TryGetValue("X-GitHub-Event", out var callbackEvent) || callbackEvent != "push")
+            {
+                // this typically seem to be installation related events.
+                log.LogWarning($"Non-push callback. 'X-GitHub-Event': '{callbackEvent}'");
+                return new OkResult();
+            }
+
             GitHubClient installationClient;
             CallbackModel requestObject;
             try
