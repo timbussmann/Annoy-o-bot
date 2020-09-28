@@ -110,6 +110,13 @@ namespace Annoy_o_Bot
                 
             }
 
+            await installationClient.Check.Run.Create(requestObject.Repository.Id,
+                new NewCheckRun("annoy-o-bot", requestObject.HeadCommit.Id)
+                {
+                    Status = CheckStatus.Completed,
+                    Conclusion = CheckConclusion.Success
+                });
+
             return new OkResult();
 
             string BuildDocumentId(string fileName)
