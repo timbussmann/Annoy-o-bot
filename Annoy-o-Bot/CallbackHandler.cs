@@ -48,7 +48,29 @@ namespace Annoy_o_Bot
                 throw;
             }
 
-            var newReminders = await FindNewReminders(requestObject, installationClient);
+            IList<(string, Reminder)> newReminders;
+            try
+            {
+                newReminders = await FindNewReminders(requestObject, installationClient);
+                if (newReminders == null)
+                {
+                    return new OkResult();
+                }
+            }
+            catch (Exception e)
+            {
+                await installationClient.Check.Run.Create(requestObject.Repository.Id,
+                    new NewCheckRun("annoy-o-bot", requestObject.HeadCommit.Id)
+                    {
+                        Status = CheckStatus.Completed,
+                        Conclusion = CheckConclusion.Failure,
+                        Output = new NewCheckRunOutput(
+                            "Invalid reminder definition",
+                            "The provided reminder seems to be invalid or incorrect: " + e)
+                    });
+                throw;
+            }
+
             if (!requestObject.Ref.EndsWith($"/{requestObject.Repository.DefaultBranch}"))
             {
                 await installationClient.Check.Run.Create(requestObject.Repository.Id,
