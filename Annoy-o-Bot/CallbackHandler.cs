@@ -39,8 +39,6 @@ namespace Annoy_o_Bot
                 //dynamic data = JsonConvert.DeserializeObject(requestBody);
                 requestObject = RequestParser.ParseJson(requestBody);
                 installationClient = await GitHubHelper.GetInstallationClient(requestObject.Installation.Id);
-
-
             }
             catch (Exception e)
             {
@@ -52,10 +50,6 @@ namespace Annoy_o_Bot
             try
             {
                 newReminders = await FindNewReminders(requestObject, installationClient);
-                if (newReminders == null)
-                {
-                    return new OkResult();
-                }
             }
             catch (Exception e)
             {
@@ -71,35 +65,32 @@ namespace Annoy_o_Bot
                 throw;
             }
 
-            if (!requestObject.Ref.EndsWith($"/{requestObject.Repository.DefaultBranch}"))
+            if (requestObject.Ref.EndsWith($"/{requestObject.Repository.DefaultBranch}"))
             {
-                await installationClient.Check.Run.Create(requestObject.Repository.Id,
-                    new NewCheckRun("annoy-o-bot", requestObject.HeadCommit.Id)
-                    {
-                        Status = CheckStatus.Completed,
-                        Conclusion = CheckConclusion.Success
-                    });
-
-                return new OkResult();
-            }
-
-            foreach ((string fileName, Reminder reminder) in newReminders)
-            {
-                await documents.AddAsync(new ReminderDocument
+                foreach ((string fileName, Reminder reminder) in newReminders)
                 {
-                    Id = BuildDocumentId(requestObject, fileName),
-                    InstallationId = requestObject.Installation.Id,
-                    RepositoryId = requestObject.Repository.Id,
-                    Reminder = reminder,
-                    NextReminder = new DateTime(reminder.Date.Ticks, DateTimeKind.Utc),
-                    Path = fileName
-                });
-                await CreateCommitComment(installationClient, requestObject,
-                    $"Created reminder '{reminder.Title}' for {reminder.Date:D}");
+                    await documents.AddAsync(new ReminderDocument
+                    {
+                        Id = BuildDocumentId(requestObject, fileName),
+                        InstallationId = requestObject.Installation.Id,
+                        RepositoryId = requestObject.Repository.Id,
+                        Reminder = reminder,
+                        NextReminder = new DateTime(reminder.Date.Ticks, DateTimeKind.Utc),
+                        Path = fileName
+                    });
+                    await CreateCommitComment(installationClient, requestObject,
+                        $"Created reminder '{reminder.Title}' for {reminder.Date:D}");
+                }
+
+                await DeleteRemovedReminders(documentClient, log, requestObject, installationClient);
             }
 
-            await StoreNewReminders(documents, log, requestObject, installationClient);
-            await DeleteRemovedReminders(documentClient, log, requestObject, installationClient);
+            await installationClient.Check.Run.Create(requestObject.Repository.Id,
+                new NewCheckRun("annoy-o-bot", requestObject.HeadCommit.Id)
+                {
+                    Status = CheckStatus.Completed,
+                    Conclusion = CheckConclusion.Success
+                });
 
             return new OkResult();
         }
@@ -127,45 +118,6 @@ namespace Annoy_o_Bot
             }
 
             return results;
-        }
-
-        private static async Task StoreNewReminders(IAsyncCollector<ReminderDocument> documents, ILogger log, CallbackModel requestObject,
-            GitHubClient installationClient)
-        {
-            foreach (var newFile in CommitParser.GetReminders(requestObject.Commits))
-            {
-                try
-                {
-                    var reminderParser = GetReminderParser(newFile);
-                    if (reminderParser == null)
-                    {
-                        // unsupported file type
-                        continue;
-                    }
-
-                    var content =
-                        await installationClient.Repository.Content.GetAllContents(requestObject.Repository.Id, newFile);
-                    var reminder = reminderParser.Parse(content.First().Content);
-                    await documents.AddAsync(new ReminderDocument
-                    {
-                        Id = BuildDocumentId(requestObject, newFile),
-                        InstallationId = requestObject.Installation.Id,
-                        RepositoryId = requestObject.Repository.Id,
-                        Reminder = reminder,
-                        NextReminder = new DateTime(reminder.Date.Ticks, DateTimeKind.Utc),
-                        Path = newFile
-                    });
-                    await CreateCommitComment(installationClient, requestObject,
-                        $"Created reminder '{reminder.Title}' for {reminder.Date:D}");
-                }
-                catch (Exception e)
-                {
-                    log.LogError(e, "Failed to create reminder");
-                    await CreateCommitComment(installationClient, requestObject,
-                        $"Failed to create reminder {newFile}: {string.Join(Environment.NewLine, e.Message, e.StackTrace)}");
-                    throw;
-                }
-            }
         }
 
         static Task CreateCommitComment(GitHubClient client, CallbackModel request, string comment)
