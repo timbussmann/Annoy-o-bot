@@ -53,7 +53,7 @@ namespace Annoy_o_Bot
             }
             catch (Exception e)
             {
-                await installationClient.Check.Run.Create(requestObject.Repository.Id,
+                await TryCreateCheckRun(installationClient, requestObject.Repository.Id,
                     new NewCheckRun("annoy-o-bot", requestObject.HeadCommit.Id)
                     {
                         Status = CheckStatus.Completed,
@@ -61,7 +61,7 @@ namespace Annoy_o_Bot
                         Output = new NewCheckRunOutput(
                             "Invalid reminder definition",
                             "The provided reminder seems to be invalid or incorrect: " + e)
-                    });
+                    }, log);
                 throw;
             }
 
@@ -85,14 +85,27 @@ namespace Annoy_o_Bot
                 await DeleteRemovedReminders(documentClient, log, requestObject, installationClient);
             }
 
-            await installationClient.Check.Run.Create(requestObject.Repository.Id,
+            await TryCreateCheckRun(installationClient, requestObject.Repository.Id,
                 new NewCheckRun("annoy-o-bot", requestObject.HeadCommit.Id)
                 {
                     Status = CheckStatus.Completed,
                     Conclusion = CheckConclusion.Success
-                });
+                }, log);
 
             return new OkResult();
+        }
+
+        private static async Task TryCreateCheckRun(GitHubClient installationClient, long repositoryId, NewCheckRun checkRun, ILogger logger)
+        {
+            // Ignore check run failures for now. Check run permissions were added later, so users might not have granted permissions to add check runs.
+            try
+            {
+                await installationClient.Check.Run.Create(repositoryId, checkRun);
+            }
+            catch (Exception e)
+            {
+                logger.LogWarning(e, $"Failed to create check run for repository {repositoryId}.");
+            }
         }
 
         private static async Task<IList<(string, Reminder)>> FindNewReminders(CallbackModel requestObject,
@@ -197,7 +210,4 @@ namespace Annoy_o_Bot
         public DateTime NextReminder { get; set; }
         public string Path { get; set; } = null!;
     }
-
-    //TODO: support projects
-
 }
