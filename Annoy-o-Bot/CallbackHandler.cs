@@ -27,6 +27,7 @@ namespace Annoy_o_Bot
             if (!req.Headers.TryGetValue("X-GitHub-Event", out var callbackEvent) || callbackEvent != "push")
             {
                 // this typically seem to be installation related events.
+                // Or check_run (action:requested/rerequested) / check_suite events.
                 log.LogWarning($"Non-push callback. 'X-GitHub-Event': '{callbackEvent}'");
                 return new OkResult();
             }
@@ -60,7 +61,7 @@ namespace Annoy_o_Bot
                         Conclusion = CheckConclusion.Failure,
                         Output = new NewCheckRunOutput(
                             "Invalid reminder definition",
-                            "The provided reminder seems to be invalid or incorrect: " + e)
+                            "The provided reminder seems to be invalid or incorrect." + e.Message)
                     }, log);
                 throw;
             }
@@ -85,12 +86,15 @@ namespace Annoy_o_Bot
                 await DeleteRemovedReminders(documentClient, log, requestObject, installationClient);
             }
 
-            await TryCreateCheckRun(installationClient, requestObject.Repository.Id,
-                new NewCheckRun("annoy-o-bot", requestObject.HeadCommit.Id)
-                {
-                    Status = CheckStatus.Completed,
-                    Conclusion = CheckConclusion.Success
-                }, log);
+            if (newReminders.Any())
+            {
+                await TryCreateCheckRun(installationClient, requestObject.Repository.Id,
+                    new NewCheckRun("annoy-o-bot", requestObject.HeadCommit.Id)
+                    {
+                        Status = CheckStatus.Completed,
+                        Conclusion = CheckConclusion.Success
+                    }, log);
+            }
 
             return new OkResult();
         }
