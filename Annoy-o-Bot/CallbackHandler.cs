@@ -53,6 +53,8 @@ namespace Annoy_o_Bot
                 return new OkResult();
             }
 
+            log.LogInformation($"Handling changes made to branch '{requestObject.Ref}' by head-commit '{requestObject.HeadCommit}'.");
+
             IList<(string, Reminder)> newReminders;
             try
             {
