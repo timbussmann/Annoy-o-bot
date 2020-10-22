@@ -8,7 +8,6 @@ namespace Annoy_o_Bot.Tests
         [Fact]
         public void NewFileAdded()
         {
-            var parser = new RequestParser();
             var result = RequestParser.ParseJson(File.ReadAllText("requests/fileAdded.json"));
 
             Assert.Equal("refs/heads/master", result.Ref);
@@ -30,7 +29,6 @@ namespace Annoy_o_Bot.Tests
         [Fact]
         public void MultiCommit()
         {
-            var parser = new RequestParser();
             var result = RequestParser.ParseJson(File.ReadAllText("requests/multiCommitFileHistory.json"));
 
             Assert.Equal(4, result.Commits.Length);
@@ -52,6 +50,15 @@ namespace Annoy_o_Bot.Tests
             Assert.Empty(result.Commits[3].Removed);
 
             Assert.Equal("cb1ec97f51657c2718ab4e0b1d0bf2656aeb3127", result.HeadCommit.Id);
+        }
+
+        [Fact]
+        public void BranchDeleted()
+        {
+            var result = RequestParser.ParseJson(File.ReadAllText("requests/branchDeleted.json"));
+
+            Assert.Null(result.HeadCommit);
+            Assert.Empty(result.Commits);
         }
     }
 }

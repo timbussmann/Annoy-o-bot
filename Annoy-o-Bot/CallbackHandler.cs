@@ -47,6 +47,12 @@ namespace Annoy_o_Bot
                 throw;
             }
 
+            if (requestObject.HeadCommit == null)
+            {
+                // no commits on push (e.g. branch delete)
+                return new OkResult();
+            }
+
             IList<(string, Reminder)> newReminders;
             try
             {
