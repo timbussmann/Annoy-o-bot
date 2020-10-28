@@ -10,7 +10,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Azure.Documents;
 using Microsoft.Azure.Documents.Client;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using Octokit;
 
 namespace Annoy_o_Bot
@@ -32,20 +31,8 @@ namespace Annoy_o_Bot
                 return new OkResult();
             }
 
-            GitHubClient installationClient;
-            CallbackModel requestObject;
-            try
-            {
-                string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-                //dynamic data = JsonConvert.DeserializeObject(requestBody);
-                requestObject = RequestParser.ParseJson(requestBody);
-                installationClient = await GitHubHelper.GetInstallationClient(requestObject.Installation.Id);
-            }
-            catch (Exception e)
-            {
-                log.LogError(e, "Error at parsing callback input");
-                throw;
-            }
+            var requestObject = await ParseRequest(req, log);
+            var installationClient = await GitHubHelper.GetInstallationClient(requestObject.Installation.Id);
 
             if (requestObject.HeadCommit == null)
             {
@@ -105,6 +92,23 @@ namespace Annoy_o_Bot
             }
 
             return new OkResult();
+        }
+
+        private static async Task<CallbackModel> ParseRequest(HttpRequest req, ILogger log)
+        {
+            CallbackModel requestObject;
+            try
+            {
+                string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
+                requestObject = RequestParser.ParseJson(requestBody);
+            }
+            catch (Exception e)
+            {
+                log.LogError(e, "Error at parsing callback input");
+                throw;
+            }
+
+            return requestObject;
         }
 
         private static async Task TryCreateCheckRun(GitHubClient installationClient, long repositoryId, NewCheckRun checkRun, ILogger logger)
@@ -208,18 +212,5 @@ namespace Annoy_o_Bot
 
         static readonly Lazy<JsonReminderParser> JsonReminderParser = new Lazy<JsonReminderParser>(() => new JsonReminderParser());
         static readonly Lazy<YamlReminderParser> YamlReminderParser = new Lazy<YamlReminderParser>(() => new YamlReminderParser());
-    }
-
-    public class ReminderDocument
-    {
-        // assigning null using the null-forgiving operator because the value will always be set
-        [JsonProperty("id")]
-        public string Id { get; set; } = null!;
-        public Reminder Reminder { get; set; } = null!;
-        public long InstallationId { get; set; }
-        public long RepositoryId { get; set; }
-        public DateTime LastReminder { get; set; }
-        public DateTime NextReminder { get; set; }
-        public string Path { get; set; } = null!;
     }
 }
