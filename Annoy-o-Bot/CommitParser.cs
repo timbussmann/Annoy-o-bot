@@ -7,19 +7,19 @@ namespace Annoy_o_Bot
     {
         public static string[] GetReminders(CallbackModel.CommitModel[] commits)
         {
-            return commits.Aggregate(new HashSet<string>(), (added, model) =>
+            return commits.Aggregate(new HashSet<string>(), (added, commit) =>
             {
-                foreach (var newFile in model.Added)
+                foreach (var newFile in commit.Added)
                 {
                     added.Add(newFile);
                 }
 
-                foreach (var modifiedFile in model.Modified)
+                foreach (var modifiedFile in commit.Modified)
                 {
                     added.Add(modifiedFile);
                 }
 
-                foreach (var remvovedFile in model.Removed)
+                foreach (var remvovedFile in commit.Removed)
                 {
                     added.Remove(remvovedFile);
                 }
@@ -32,9 +32,9 @@ namespace Annoy_o_Bot
 
         public static string[] GetDeletedReminders(CallbackModel.CommitModel[] commits)
         {
-            return commits.Aggregate((removed: new HashSet<string>(), @new: new HashSet<string>()), (tuple, model) =>
+            return commits.Aggregate((removed: new HashSet<string>(), @new: new HashSet<string>()), (tuple, commit) =>
                 {
-                    foreach (var newFile in model.Added)
+                    foreach (var newFile in commit.Added)
                     {
                         if (tuple.removed.Contains(newFile))
                         {
@@ -46,7 +46,7 @@ namespace Annoy_o_Bot
                         }
                     }
 
-                    foreach (var remvovedFile in model.Removed)
+                    foreach (var remvovedFile in commit.Removed)
                     {
                         if (!tuple.@new.Contains(remvovedFile))
                         {
