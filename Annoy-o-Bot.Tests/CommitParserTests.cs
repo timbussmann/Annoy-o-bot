@@ -418,5 +418,12 @@ namespace Annoy_o_Bot.Tests
                 ".reminders/existingReminder2.json"
             }, result);
         }
+
+        [Fact]
+        public void Should_return_no_results_when_no_commits()
+        {
+            Assert.Empty(CommitParser.GetReminders(new CallbackModel.CommitModel[0]));
+            Assert.Empty(CommitParser.GetDeletedReminders(new CallbackModel.CommitModel[0]));
+        }
     }
 }
