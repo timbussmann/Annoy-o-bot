@@ -5,9 +5,8 @@ namespace Annoy_o_Bot.Tests
     public class CommitParserTests
     {
         [Fact]
-        public void GetDeletedReminders_should_only_return_deleted_json_files_in_reminder_folder()
+        public void GetDeletedReminders_should_only_return_deleted_files_in_reminder_folder()
         {
-            var parser = new CommitParser();
             var commitModel = new[]
             {
 
@@ -35,7 +34,6 @@ namespace Annoy_o_Bot.Tests
         [Fact]
         public void GetDeletedReminders_should_return_removed_files_from_all_commits()
         {
-            var parser = new CommitParser();
             var commitModel = new[]
             {
 
@@ -75,7 +73,6 @@ namespace Annoy_o_Bot.Tests
         [Fact]
         public void GetDeletedReminders_should_not_return_reverted_removed_files()
         {
-            var parser = new CommitParser();
             var commitModel = new[]
             {
 
@@ -103,7 +100,6 @@ namespace Annoy_o_Bot.Tests
         [Fact]
         public void GetDeletedReminders_return_removed_files_with_complex_history()
         {
-            var parser = new CommitParser();
             var commitModel = new[]
             {
 
@@ -139,7 +135,6 @@ namespace Annoy_o_Bot.Tests
         [Fact]
         public void GetDeletedReminders_should_return_removed_modified_files()
         {
-            var parser = new CommitParser();
             var commitModel = new[]
             {
 
@@ -168,7 +163,6 @@ namespace Annoy_o_Bot.Tests
         [Fact]
         public void GetDeletedReminders_should_not_return_reverted_reminders()
         {
-            var parser = new CommitParser();
             var commitModel = new[]
             {
 
@@ -194,9 +188,8 @@ namespace Annoy_o_Bot.Tests
         }
 
         [Fact]
-        public void GetReminders_Should_only_return_json_files_in_reminder_folder()
+        public void GetReminders_Should_only_return_files_in_reminder_folder()
         {
-            var parser = new CommitParser();
             var commitModel = new[]
             {
 
@@ -225,7 +218,6 @@ namespace Annoy_o_Bot.Tests
         [Fact]
         public void GetReminders_Should_return_added_files_from_all_commits()
         {
-            var parser = new CommitParser();
             var commitModel = new[]
             {
 
@@ -265,7 +257,6 @@ namespace Annoy_o_Bot.Tests
         [Fact]
         public void GetReminders_Should_not_return_reverted_new_files()
         {
-            var parser = new CommitParser();
             var commitModel = new[]
             {
 
@@ -293,7 +284,6 @@ namespace Annoy_o_Bot.Tests
         [Fact]
         public void GetReminders_Should_not_return_deleted_modified_files()
         {
-            var parser = new CommitParser();
             var commitModel = new[]
             {
 
@@ -321,7 +311,6 @@ namespace Annoy_o_Bot.Tests
         [Fact]
         public void GetReminders_Should_return_added_reverted_added_again_file()
         {
-            var parser = new CommitParser();
             var commitModel = new[]
             {
 
@@ -357,7 +346,6 @@ namespace Annoy_o_Bot.Tests
         [Fact]
         public void GetReminders_should_include_modified_reminders()
         {
-            var parser = new CommitParser();
             var commitModel = new[]
             {
 
@@ -396,6 +384,13 @@ namespace Annoy_o_Bot.Tests
                 ".reminders/newReminder.json",
                 ".reminders/existingReminder2.json"
             }, result);
+        }
+
+        [Fact]
+        public void Should_return_no_results_when_no_commits()
+        {
+            Assert.Empty(CommitParser.GetReminders(new CallbackModel.CommitModel[0]));
+            Assert.Empty(CommitParser.GetDeletedReminders(new CallbackModel.CommitModel[0]));
         }
     }
 }

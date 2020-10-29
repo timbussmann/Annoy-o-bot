@@ -17,6 +17,7 @@ namespace Annoy_o_Bot
         public class CommitModel
         {
             public string Id { get; set; }
+            public string Message { get; set; }
             public string[] Added { get; set; } = new string[0];
             public string[] Modified { get; set; } = new string[0];
             public string[] Removed { get; set; } = new string[0];
