@@ -5,39 +5,6 @@ namespace Annoy_o_Bot.Tests
     public class CommitParserTests
     {
         [Fact]
-        public void When_merge_commit_should_only_return_reminders_from_merge_commit()
-        {
-            // forward integrate brings in reminder history that is already on the target branch and therefore not present on the actual merge commit
-            var commitModel = new[]
-            {
-                new CallbackModel.CommitModel
-                {
-                    Message = "Add new reminder",
-                    Added = new []{ ".reminders/new-reminder" }
-                }, 
-                new CallbackModel.CommitModel
-                {
-                    Message = "Forward integrate",
-                    Removed = new []{ ".reminders/deleted-reminder" },
-                    Modified = new []{ ".reminders/modified-reminder" },
-                    Added = new []{ ".reminders/added-reminder" }
-                }, 
-                new CallbackModel.CommitModel
-                {
-                    Message = "Merge branch 'sample-branch'",
-                    Removed = new string[0],
-                    Added = new []{ ".reminders/new-reminder" }
-                }
-            };
-
-            var deletedReminders = CommitParser.GetDeletedReminders(commitModel);
-            Assert.Empty(deletedReminders);
-
-            var newReminders = CommitParser.GetReminders(commitModel);
-            Assert.Equal(".reminders/new-reminder", Assert.Single(newReminders));
-        }
-
-        [Fact]
         public void GetDeletedReminders_should_only_return_deleted_files_in_reminder_folder()
         {
             var commitModel = new[]

@@ -42,27 +42,16 @@ namespace Annoy_o_Bot
 
             log.LogInformation($"Handling changes made to branch '{requestObject.Ref}' by head-commit '{requestObject.HeadCommit}'.");
 
-            IList<(string, Reminder)> newReminders;
-            try
-            {
-                newReminders = await FindNewReminders(requestObject, installationClient);
-            }
-            catch (Exception e)
-            {
-                await TryCreateCheckRun(installationClient, requestObject.Repository.Id,
-                    new NewCheckRun("annoy-o-bot", requestObject.HeadCommit.Id)
-                    {
-                        Status = CheckStatus.Completed,
-                        Conclusion = CheckConclusion.Failure,
-                        Output = new NewCheckRunOutput(
-                            "Invalid reminder definition",
-                            "The provided reminder seems to be invalid or incorrect." + e.Message)
-                    }, log);
-                throw;
-            }
-
             if (requestObject.Ref.EndsWith($"/{requestObject.Repository.DefaultBranch}"))
             {
+                var commitsToConsider = requestObject.Commits;
+                if (commitsToConsider.LastOrDefault()?.Message?.StartsWith("Merge ") ?? false)
+                {
+                    // if the last commit is a merge commit, ignore other commits as the merge commits contains all the relevant changes
+                    // TODO: This behavior will be incorrect if a non-merge-commit contains this commit message. To be absolutely sure, we'd have to retrieve the full commit object and inspect the parent information. This information is not available on the callback object
+                    commitsToConsider = new[] {commitsToConsider.Last()};
+                }
+                var newReminders = await FindNewReminders(commitsToConsider, requestObject, installationClient);
                 foreach ((string fileName, Reminder reminder) in newReminders)
                 {
                     await documents.AddAsync(new ReminderDocument
@@ -80,15 +69,37 @@ namespace Annoy_o_Bot
 
                 await DeleteRemovedReminders(documentClient, log, requestObject, installationClient);
             }
-
-            if (newReminders.Any())
+            else
             {
-                await TryCreateCheckRun(installationClient, requestObject.Repository.Id,
-                    new NewCheckRun("annoy-o-bot", requestObject.HeadCommit.Id)
-                    {
-                        Status = CheckStatus.Completed,
-                        Conclusion = CheckConclusion.Success
-                    }, log);
+                IList<(string, Reminder)> newReminders;
+                try
+                {
+                    // inspect all commits on branches as we just want to see whether they are valid
+                    newReminders = await FindNewReminders(requestObject.Commits, requestObject, installationClient);
+                }
+                catch (Exception e)
+                {
+                    await TryCreateCheckRun(installationClient, requestObject.Repository.Id,
+                        new NewCheckRun("annoy-o-bot", requestObject.HeadCommit.Id)
+                        {
+                            Status = CheckStatus.Completed,
+                            Conclusion = CheckConclusion.Failure,
+                            Output = new NewCheckRunOutput(
+                                "Invalid reminder definition",
+                                "The provided reminder seems to be invalid or incorrect." + e.Message)
+                        }, log);
+                    throw;
+                }
+
+                if (newReminders.Any())
+                {
+                    await TryCreateCheckRun(installationClient, requestObject.Repository.Id,
+                        new NewCheckRun("annoy-o-bot", requestObject.HeadCommit.Id)
+                        {
+                            Status = CheckStatus.Completed,
+                            Conclusion = CheckConclusion.Success
+                        }, log);
+                }
             }
 
             return new OkResult();
@@ -124,10 +135,11 @@ namespace Annoy_o_Bot
             }
         }
 
-        private static async Task<IList<(string, Reminder)>> FindNewReminders(CallbackModel requestObject,
+        private static async Task<IList<(string, Reminder)>> FindNewReminders(
+            CallbackModel.CommitModel[] commits, CallbackModel requestObject,
             GitHubClient installationClient)
         {
-            var reminderFiles = CommitParser.GetReminders(requestObject.Commits);
+            var reminderFiles = CommitParser.GetReminders(commits);
             var results = new List<(string, Reminder)>(reminderFiles.Length); // potentially lower but never higher than number of files
             foreach (string newFile in reminderFiles)
             {
