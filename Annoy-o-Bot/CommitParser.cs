@@ -7,6 +7,8 @@ namespace Annoy_o_Bot
     {
         public static string[] GetReminders(CallbackModel.CommitModel[] commits)
         {
+            commits = SelectRelevantCommits(commits);
+
             return commits.Aggregate(new HashSet<string>(), (added, commit) =>
             {
                 foreach (var newFile in commit.Added)
@@ -32,6 +34,8 @@ namespace Annoy_o_Bot
 
         public static string[] GetDeletedReminders(CallbackModel.CommitModel[] commits)
         {
+            commits = SelectRelevantCommits(commits);
+
             return commits.Aggregate((removed: new HashSet<string>(), @new: new HashSet<string>()), (tuple, commit) =>
                 {
                     foreach (var newFile in commit.Added)
@@ -60,6 +64,18 @@ namespace Annoy_o_Bot
                 .Where(x => x.StartsWith(".reminders/"))
                 .ToArray();
 
+        }
+
+        private static CallbackModel.CommitModel[] SelectRelevantCommits(CallbackModel.CommitModel[] commits)
+        {
+            // if the last commit is a merge commit, ignore other commits as the merge commits contains all the relevant changes
+            // TODO: This behavior will be incorrect if a non-merge-commit contains this commit message. To be absolutely sure, we'd have to retrieve the full commit object and inspect the parent information. This information is not available on the callback object
+            if (commits.LastOrDefault()?.Message?.StartsWith("Merge ") ?? false)
+            {
+                commits = commits.TakeLast(1).ToArray();
+            }
+
+            return commits;
         }
     }
 }
