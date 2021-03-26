@@ -13,6 +13,7 @@ namespace Annoy_o_Bot.Tests
             Title = "The title",
             Message = "A message with [a markdown link](/somewhere)",
             Assignee = "SomeUserHandle;AnotherUserHandle",
+            Labels = "Small task",
             Interval = Interval.Monthly,
             IntervalStep = 5,
             Date = new DateTime(2010, 11, 12)
@@ -31,6 +32,7 @@ namespace Annoy_o_Bot.Tests
             Assert.Equal("The title", result.Title);
             Assert.Equal("A message with [a markdown link](/somewhere)", result.Message);
             Assert.Equal("SomeUserHandle;AnotherUserHandle", result.Assignee);
+            Assert.Equal("Small task", result.Labels);
             Assert.Equal(Interval.Monthly, result.Interval);
             Assert.Equal(5, result.IntervalStep);
             Assert.Equal(new DateTime(2010, 11, 12), reminder.Date);
@@ -44,11 +46,13 @@ namespace Annoy_o_Bot.Tests
             var result = yamlReminderParser.Parse(
 $@"Title: {keyword}
 Message: {keyword}
-Assignee: {keyword}");
+Assignee: {keyword}
+Labels: {keyword}");
 
             Assert.Equal(keyword, result.Title);
             Assert.Equal(keyword, result.Message);
             Assert.Equal(keyword, result.Assignee);
+            Assert.Equal(keyword, result.Labels);
         }
 
         [Theory]

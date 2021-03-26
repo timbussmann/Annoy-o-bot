@@ -46,6 +46,12 @@ namespace Annoy_o_Bot
                         newIssue.Assignees.Add(assignee);
                     }
 
+                    foreach (var label in reminder.Reminder.Labels?.Split(';', StringSplitOptions.RemoveEmptyEntries) ??
+                                          Enumerable.Empty<string>())
+                    {
+                        newIssue.Labels.Add(label);
+                    }
+
                     log.LogDebug($"Scheduling next due date for reminder {reminder.Id} for {reminder.NextReminder}");
 
                     var issue = await installationClient.Issue.Create(reminder.RepositoryId, newIssue);
