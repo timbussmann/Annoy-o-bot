@@ -46,8 +46,7 @@ namespace Annoy_o_Bot
                         newIssue.Assignees.Add(assignee);
                     }
 
-                    foreach (var label in reminder.Reminder.Labels?.Split(';', StringSplitOptions.RemoveEmptyEntries) ??
-                                          Enumerable.Empty<string>())
+                    foreach (var label in reminder.Reminder.Labels)
                     {
                         newIssue.Labels.Add(label);
                     }
