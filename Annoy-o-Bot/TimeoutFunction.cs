@@ -61,7 +61,7 @@ namespace Annoy_o_Bot
                 }
                 catch (ApiValidationException validationException)
                 {
-                    log.LogCritical(validationException,$"ApiValidation on reminder '{reminder.Id}' exception: {validationException.Message}:{validationException.HttpResponse}");
+                    log.LogCritical(validationException,$"ApiValidation on reminder '{reminder.Id}' exception: {validationException.Message}:{validationException.HttpResponse.Body}");
                 }
                 catch (Exception e)
                 {
