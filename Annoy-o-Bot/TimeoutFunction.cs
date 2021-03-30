@@ -55,7 +55,7 @@ namespace Annoy_o_Bot
 
                     var issue = await installationClient.Issue.Create(reminder.RepositoryId, newIssue);
 
-                    log.LogInformation($"Created reminder issue based on reminder {reminder.Id}");
+                    log.LogInformation($"Created reminder issue #{issue.Number} based on reminder {reminder.Id}");
 
                     await documents.AddAsync(reminder);
                 }
