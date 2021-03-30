@@ -46,17 +46,22 @@ namespace Annoy_o_Bot
                         newIssue.Assignees.Add(assignee);
                     }
 
+                    foreach (var label in reminder.Reminder.Labels)
+                    {
+                        newIssue.Labels.Add(label);
+                    }
+
                     log.LogDebug($"Scheduling next due date for reminder {reminder.Id} for {reminder.NextReminder}");
 
                     var issue = await installationClient.Issue.Create(reminder.RepositoryId, newIssue);
 
-                    log.LogInformation($"Created reminder issue based on reminder {reminder.Id}");
+                    log.LogInformation($"Created reminder issue #{issue.Number} based on reminder {reminder.Id}");
 
                     await documents.AddAsync(reminder);
                 }
                 catch (ApiValidationException validationException)
                 {
-                    log.LogCritical(validationException,$"ApiValidation on reminder '{reminder.Id}' exception: {validationException.Message}:{validationException.HttpResponse}");
+                    log.LogCritical(validationException,$"ApiValidation on reminder '{reminder.Id}' exception: {validationException.Message}:{validationException.HttpResponse.Body}");
                 }
                 catch (Exception e)
                 {

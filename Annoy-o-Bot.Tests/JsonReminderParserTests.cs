@@ -12,6 +12,7 @@ namespace Annoy_o_Bot.Tests
             Title = "The title",
             Message = "A message",
             Assignee = "SomeUserHandle;AnotherUserHandle",
+            Labels = new[] { "Label1", "Label2" },
             Interval = Interval.Monthly,
             IntervalStep = 5,
             Date = new DateTime(2010, 11, 12)
@@ -32,6 +33,8 @@ namespace Annoy_o_Bot.Tests
             Assert.Equal(Interval.Monthly, result.Interval);
             Assert.Equal(5, result.IntervalStep);
             Assert.Equal(new DateTime(2010, 11, 12), reminder.Date);
+            Assert.Contains("Label1", result.Labels);
+            Assert.Contains("Label2", result.Labels);
         }
 
         [Theory]
