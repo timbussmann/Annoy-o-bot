@@ -74,7 +74,7 @@
         }
 
         [Fact]
-        public void Should_handle_update_deletes()
+        public void Should_handle_update_delete()
         {
             var commitModel = new[]
             {

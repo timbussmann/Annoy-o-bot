@@ -16,11 +16,14 @@ namespace Annoy_o_Bot
 {
     public static class CallbackHandler
     {
+        const string dbName = "annoydb";
+        const string collectionId = "reminders";
+
         [FunctionName("Callback")]
         public static async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
-            [CosmosDB("annoydb", "reminders", ConnectionStringSetting = "CosmosDBConnection")]IAsyncCollector<ReminderDocument> documents,
-            [CosmosDB("annoydb", "reminders", ConnectionStringSetting = "CosmosDBConnection")]IDocumentClient documentClient,
+            [CosmosDB(dbName, collectionId, ConnectionStringSetting = "CosmosDBConnection")]IAsyncCollector<ReminderDocument> documents,
+            [CosmosDB(dbName, collectionId, ConnectionStringSetting = "CosmosDBConnection")]IDocumentClient documentClient,
             ILogger log)
         {
             if (!req.Headers.TryGetValue("X-GitHub-Event", out var callbackEvent) || callbackEvent != "push")
@@ -51,10 +54,13 @@ namespace Annoy_o_Bot
                     // TODO: This behavior will be incorrect if a non-merge-commit contains this commit message. To be absolutely sure, we'd have to retrieve the full commit object and inspect the parent information. This information is not available on the callback object
                     commitsToConsider = new[] {commitsToConsider.Last()};
                 }
-                var newReminders = await FindNewReminders(commitsToConsider, requestObject, installationClient);
+
+                var fileChanges = CommitParser.GetChanges(commitsToConsider);
+                var reminderChanges = ReminderFilter.FilterReminders(fileChanges);
+                var newReminders = await LoadReminder(reminderChanges.New, requestObject, installationClient);
                 foreach ((string fileName, Reminder reminder) in newReminders)
                 {
-                    await documents.AddAsync(new ReminderDocument
+                    var reminderDocument = new ReminderDocument
                     {
                         Id = BuildDocumentId(requestObject, fileName),
                         InstallationId = requestObject.Installation.Id,
@@ -62,12 +68,31 @@ namespace Annoy_o_Bot
                         Reminder = reminder,
                         NextReminder = new DateTime(reminder.Date.Ticks, DateTimeKind.Utc),
                         Path = fileName
-                    });
+                    };
+
+                    await documents.AddAsync(reminderDocument);
                     await CreateCommitComment(installationClient, requestObject,
                         $"Created reminder '{reminder.Title}' for {reminder.Date:D}");
                 }
 
-                await DeleteRemovedReminders(documentClient, log, requestObject, installationClient);
+                var updatedReminders = await LoadReminder(reminderChanges.Updated, requestObject, installationClient);
+                foreach ((string fileName, Reminder reminder) in updatedReminders)
+                {
+                    var documentId = BuildDocumentId(requestObject, fileName);
+                    UriFactory.CreateDocumentUri(dbName, collectionId, documentId);
+                    var existingReminder = await documentClient.ReadDocumentAsync<ReminderDocument>(documentId); //TODO do we need a sharding key?
+
+                    existingReminder.Document.Reminder = reminder;
+                    // recalculate next reminder due time from scratch:
+                    existingReminder.Document.NextReminder = new DateTime(reminder.Date.Ticks, DateTimeKind.Utc);
+                    existingReminder.Document.CalculateNextReminder(DateTime.Now);
+
+                    await documents.AddAsync(existingReminder.Document);
+                    await CreateCommitComment(installationClient, requestObject,
+                        $"Updated reminder '{reminder.Title}' for {existingReminder.Document.NextReminder:D}");
+                }
+
+                await DeleteRemovedReminders(fileChanges.Deleted, documentClient, log, requestObject, installationClient);
             }
             else
             {
@@ -161,6 +186,29 @@ namespace Annoy_o_Bot
             return results;
         }
 
+        static async Task<IList<(string, Reminder)>> LoadReminder(ICollection<string> filePaths, CallbackModel requestObject, GitHubClient installationClient)
+        {
+            var results = new List<(string, Reminder)>(filePaths.Count); // potentially lower but never higher than number of files
+            foreach (var filePath in filePaths)
+            {
+                var parser = GetReminderParser(filePath);
+                if (parser == null)
+                {
+                    // unsupported file type
+                    continue;
+                }
+
+                var content = await installationClient.Repository.Content.GetAllContentsByRef(
+                    requestObject.Repository.Id,
+                    filePath,
+                    requestObject.Ref);
+                var reminder = parser.Parse(content.First().Content);
+                results.Add((filePath, reminder));
+            }
+
+            return results;
+        }
+
         static Task CreateCommitComment(GitHubClient client, CallbackModel request, string comment)
         {
             return client.Repository.Comment.Create(
@@ -174,11 +222,9 @@ namespace Annoy_o_Bot
             return $"{request.Installation.Id}-{request.Repository.Id}-{fileName.Split('/').Last()}";
         }
 
-        private static async Task DeleteRemovedReminders(IDocumentClient documentClient, ILogger log,
-            CallbackModel requestObject, GitHubClient client)
+        static async Task DeleteRemovedReminders(ICollection<string> deletedFiles, IDocumentClient documentClient, ILogger log, CallbackModel requestObject, GitHubClient client)
         {
-            var deletedReminders = CommitParser.GetDeletedReminders(requestObject.Commits);
-            foreach (var deletedReminder in deletedReminders)
+            foreach (var deletedReminder in deletedFiles)
             {
                 var reminderParser = GetReminderParser(deletedReminder);
                 if (reminderParser == null)
@@ -192,7 +238,7 @@ namespace Annoy_o_Bot
                     var documentId = BuildDocumentId(requestObject, deletedReminder);
                     var documentUri = UriFactory.CreateDocumentUri("annoydb", "reminders", documentId);
                     await documentClient.DeleteDocumentAsync(documentUri,
-                        new RequestOptions() {PartitionKey = new PartitionKey(documentId)});
+                        new RequestOptions {PartitionKey = new PartitionKey(documentId)});
                     await CreateCommitComment(client, requestObject, $"Deleted reminder '{deletedReminder}'");
                 }
                 catch (Exception e)
@@ -207,7 +253,7 @@ namespace Annoy_o_Bot
             }
         }
 
-        private static ReminderParser? GetReminderParser(string filePath)
+        static ReminderParser? GetReminderParser(string filePath)
         {
             if (filePath.EndsWith(".json", StringComparison.InvariantCultureIgnoreCase))
             {
