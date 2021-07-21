@@ -80,17 +80,22 @@ namespace Annoy_o_Bot
                 foreach ((string fileName, Reminder reminder) in updatedReminders)
                 {
                     var documentId = BuildDocumentId(requestObject, fileName);
-                    UriFactory.CreateDocumentUri(dbName, collectionId, documentId);
-                    var existingReminder = await documentClient.ReadDocumentAsync<ReminderDocument>(documentId); //TODO do we need a sharding key?
+                    var documentUri = UriFactory.CreateDocumentUri(dbName, collectionId, documentId);
+                    var existingReminder = await documentClient.ReadDocumentAsync<ReminderDocument>(documentUri, new RequestOptions { PartitionKey = new PartitionKey(documentId) });
 
-                    existingReminder.Document.Reminder = reminder;
+                    var document = existingReminder.Document;
+                    document.Reminder = reminder;
                     // recalculate next reminder due time from scratch:
-                    existingReminder.Document.NextReminder = new DateTime(reminder.Date.Ticks, DateTimeKind.Utc);
-                    existingReminder.Document.CalculateNextReminder(DateTime.Now);
+                    document.NextReminder = new DateTime(reminder.Date.Ticks, DateTimeKind.Utc);
 
-                    await documents.AddAsync(existingReminder.Document);
+                    if (document.LastReminder >= document.NextReminder)
+                    {
+                        document.CalculateNextReminder(DateTime.Now);
+                    }
+
+                    await documents.AddAsync(document);
                     await CreateCommitComment(installationClient, requestObject,
-                        $"Updated reminder '{reminder.Title}' for {existingReminder.Document.NextReminder:D}");
+                        $"Updated reminder '{reminder.Title}' for {document.NextReminder:D}");
                 }
 
                 await DeleteRemovedReminders(fileChanges.Deleted, documentClient, log, requestObject, installationClient);
@@ -223,7 +228,6 @@ namespace Annoy_o_Bot
                         client, 
                         requestObject, 
                         $"Failed to delete reminder {deletedReminder}: {string.Join(Environment.NewLine, e.Message, e.StackTrace)}");
-                    throw;
                 }
             }
         }
