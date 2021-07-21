@@ -45,18 +45,19 @@ namespace Annoy_o_Bot
 
             log.LogInformation($"Handling changes made to branch '{requestObject.Ref}' by head-commit '{requestObject.HeadCommit}'.");
 
+            var commitsToConsider = requestObject.Commits;
+            if (commitsToConsider.LastOrDefault()?.Message?.StartsWith("Merge ") ?? false)
+            {
+                // if the last commit is a merge commit, ignore other commits as the merge commits contains all the relevant changes
+                // TODO: This behavior will be incorrect if a non-merge-commit contains this commit message. To be absolutely sure, we'd have to retrieve the full commit object and inspect the parent information. This information is not available on the callback object
+                commitsToConsider = new[] { commitsToConsider.Last() };
+            }
+
+            var fileChanges = CommitParser.GetChanges(commitsToConsider);
+            var reminderChanges = ReminderFilter.FilterReminders(fileChanges);
+
             if (requestObject.Ref.EndsWith($"/{requestObject.Repository.DefaultBranch}"))
             {
-                var commitsToConsider = requestObject.Commits;
-                if (commitsToConsider.LastOrDefault()?.Message?.StartsWith("Merge ") ?? false)
-                {
-                    // if the last commit is a merge commit, ignore other commits as the merge commits contains all the relevant changes
-                    // TODO: This behavior will be incorrect if a non-merge-commit contains this commit message. To be absolutely sure, we'd have to retrieve the full commit object and inspect the parent information. This information is not available on the callback object
-                    commitsToConsider = new[] {commitsToConsider.Last()};
-                }
-
-                var fileChanges = CommitParser.GetChanges(commitsToConsider);
-                var reminderChanges = ReminderFilter.FilterReminders(fileChanges);
                 var newReminders = await LoadReminder(reminderChanges.New, requestObject, installationClient);
                 foreach ((string fileName, Reminder reminder) in newReminders)
                 {
@@ -96,11 +97,11 @@ namespace Annoy_o_Bot
             }
             else
             {
-                IList<(string, Reminder)> newReminders;
+                List<(string, Reminder)> newReminders;
                 try
                 {
-                    // inspect all commits on branches as we just want to see whether they are valid
-                    newReminders = await FindNewReminders(requestObject.Commits, requestObject, installationClient);
+                    newReminders = await LoadReminder(reminderChanges.New, requestObject, installationClient);
+                    newReminders.AddRange(await LoadReminder(reminderChanges.Updated, requestObject, installationClient));
                 }
                 catch (Exception e)
                 {
@@ -160,33 +161,7 @@ namespace Annoy_o_Bot
             }
         }
 
-        private static async Task<IList<(string, Reminder)>> FindNewReminders(
-            CallbackModel.CommitModel[] commits, CallbackModel requestObject,
-            GitHubClient installationClient)
-        {
-            var reminderFiles = CommitParser.GetReminders(commits);
-            var results = new List<(string, Reminder)>(reminderFiles.Length); // potentially lower but never higher than number of files
-            foreach (string newFile in reminderFiles)
-            {
-                var reminderParser = GetReminderParser(newFile);
-                if (reminderParser == null)
-                {
-                    // unsupported file type
-                    continue;
-                }
-
-                var content = await installationClient.Repository.Content.GetAllContentsByRef(
-                    requestObject.Repository.Id, 
-                    newFile, 
-                    requestObject.Ref);
-                var reminder = reminderParser.Parse(content.First().Content);
-                results.Add((newFile, reminder));
-            }
-
-            return results;
-        }
-
-        static async Task<IList<(string, Reminder)>> LoadReminder(ICollection<string> filePaths, CallbackModel requestObject, GitHubClient installationClient)
+        static async Task<List<(string, Reminder)>> LoadReminder(ICollection<string> filePaths, CallbackModel requestObject, GitHubClient installationClient)
         {
             var results = new List<(string, Reminder)>(filePaths.Count); // potentially lower but never higher than number of files
             foreach (var filePath in filePaths)
