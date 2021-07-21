@@ -14,13 +14,13 @@ namespace Annoy_o_Bot
         public static async Task Run(
             //[HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
             [TimerTrigger("0 */10 * * * *", RunOnStartup = false)]TimerInfo timer, // once every 10 minutes
-            [CosmosDB("annoydb", 
-                "reminders", 
+            [CosmosDB(CallbackHandler.dbName,
+                CallbackHandler.collectionId, 
                 ConnectionStringSetting = "CosmosDBConnection",
                 SqlQuery = @"SELECT * FROM c WHERE GetCurrentDateTime() >= c.NextReminder")]
             IEnumerable<ReminderDocument> dueReminders,
-            [CosmosDB("annoydb",
-                "reminders",
+            [CosmosDB(CallbackHandler.dbName,
+                CallbackHandler.collectionId,
                 ConnectionStringSetting = "CosmosDBConnection")]
             IAsyncCollector<ReminderDocument> documents,
             ILogger log)

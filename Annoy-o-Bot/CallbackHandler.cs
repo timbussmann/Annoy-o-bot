@@ -16,8 +16,8 @@ namespace Annoy_o_Bot
 {
     public static class CallbackHandler
     {
-        const string dbName = "annoydb";
-        const string collectionId = "reminders";
+        internal const string dbName = "annoydb";
+        internal const string collectionId = "reminders";
 
         [FunctionName("Callback")]
         public static async Task<IActionResult> Run(
