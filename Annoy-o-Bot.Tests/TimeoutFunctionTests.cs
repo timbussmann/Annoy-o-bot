@@ -106,7 +106,7 @@ namespace Annoy_o_Bot.Tests
                 }
             };
 
-            TimeoutFunction.CalculateNextReminder(reminder, Now);
+            reminder.CalculateNextReminder(Now);
 
             return reminder.NextReminder;
         }

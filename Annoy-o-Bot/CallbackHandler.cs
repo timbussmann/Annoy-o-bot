@@ -16,11 +16,14 @@ namespace Annoy_o_Bot
 {
     public static class CallbackHandler
     {
+        internal const string dbName = "annoydb";
+        internal const string collectionId = "reminders";
+
         [FunctionName("Callback")]
         public static async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
-            [CosmosDB("annoydb", "reminders", ConnectionStringSetting = "CosmosDBConnection")]IAsyncCollector<ReminderDocument> documents,
-            [CosmosDB("annoydb", "reminders", ConnectionStringSetting = "CosmosDBConnection")]IDocumentClient documentClient,
+            [CosmosDB(dbName, collectionId, ConnectionStringSetting = "CosmosDBConnection")]IAsyncCollector<ReminderDocument> documents,
+            [CosmosDB(dbName, collectionId, ConnectionStringSetting = "CosmosDBConnection")]IDocumentClient documentClient,
             ILogger log)
         {
             if (!req.Headers.TryGetValue("X-GitHub-Event", out var callbackEvent) || callbackEvent != "push")
@@ -42,19 +45,23 @@ namespace Annoy_o_Bot
 
             log.LogInformation($"Handling changes made to branch '{requestObject.Ref}' by head-commit '{requestObject.HeadCommit}'.");
 
+            var commitsToConsider = requestObject.Commits;
+            if (commitsToConsider.LastOrDefault()?.Message?.StartsWith("Merge ") ?? false)
+            {
+                // if the last commit is a merge commit, ignore other commits as the merge commits contains all the relevant changes
+                // TODO: This behavior will be incorrect if a non-merge-commit contains this commit message. To be absolutely sure, we'd have to retrieve the full commit object and inspect the parent information. This information is not available on the callback object
+                commitsToConsider = new[] { commitsToConsider.Last() };
+            }
+
+            var fileChanges = CommitParser.GetChanges(commitsToConsider);
+            var reminderChanges = ReminderFilter.FilterReminders(fileChanges);
+
             if (requestObject.Ref.EndsWith($"/{requestObject.Repository.DefaultBranch}"))
             {
-                var commitsToConsider = requestObject.Commits;
-                if (commitsToConsider.LastOrDefault()?.Message?.StartsWith("Merge ") ?? false)
-                {
-                    // if the last commit is a merge commit, ignore other commits as the merge commits contains all the relevant changes
-                    // TODO: This behavior will be incorrect if a non-merge-commit contains this commit message. To be absolutely sure, we'd have to retrieve the full commit object and inspect the parent information. This information is not available on the callback object
-                    commitsToConsider = new[] {commitsToConsider.Last()};
-                }
-                var newReminders = await FindNewReminders(commitsToConsider, requestObject, installationClient);
+                var newReminders = await LoadReminder(reminderChanges.New, requestObject, installationClient);
                 foreach ((string fileName, Reminder reminder) in newReminders)
                 {
-                    await documents.AddAsync(new ReminderDocument
+                    var reminderDocument = new ReminderDocument
                     {
                         Id = BuildDocumentId(requestObject, fileName),
                         InstallationId = requestObject.Installation.Id,
@@ -62,20 +69,44 @@ namespace Annoy_o_Bot
                         Reminder = reminder,
                         NextReminder = new DateTime(reminder.Date.Ticks, DateTimeKind.Utc),
                         Path = fileName
-                    });
+                    };
+
+                    await documents.AddAsync(reminderDocument);
                     await CreateCommitComment(installationClient, requestObject,
                         $"Created reminder '{reminder.Title}' for {reminder.Date:D}");
                 }
 
-                await DeleteRemovedReminders(documentClient, log, requestObject, installationClient);
+                var updatedReminders = await LoadReminder(reminderChanges.Updated, requestObject, installationClient);
+                foreach ((string fileName, Reminder reminder) in updatedReminders)
+                {
+                    var documentId = BuildDocumentId(requestObject, fileName);
+                    var documentUri = UriFactory.CreateDocumentUri(dbName, collectionId, documentId);
+                    var existingReminder = await documentClient.ReadDocumentAsync<ReminderDocument>(documentUri, new RequestOptions { PartitionKey = new PartitionKey(documentId) });
+
+                    var document = existingReminder.Document;
+                    document.Reminder = reminder;
+                    // recalculate next reminder due time from scratch:
+                    document.NextReminder = new DateTime(reminder.Date.Ticks, DateTimeKind.Utc);
+
+                    if (document.LastReminder >= document.NextReminder)
+                    {
+                        document.CalculateNextReminder(DateTime.Now);
+                    }
+
+                    await documents.AddAsync(document);
+                    await CreateCommitComment(installationClient, requestObject,
+                        $"Updated reminder '{reminder.Title}' for {document.NextReminder:D}");
+                }
+
+                await DeleteRemovedReminders(fileChanges.Deleted, documentClient, log, requestObject, installationClient);
             }
             else
             {
-                IList<(string, Reminder)> newReminders;
+                List<(string, Reminder)> newReminders;
                 try
                 {
-                    // inspect all commits on branches as we just want to see whether they are valid
-                    newReminders = await FindNewReminders(requestObject.Commits, requestObject, installationClient);
+                    newReminders = await LoadReminder(reminderChanges.New, requestObject, installationClient);
+                    newReminders.AddRange(await LoadReminder(reminderChanges.Updated, requestObject, installationClient));
                 }
                 catch (Exception e)
                 {
@@ -135,27 +166,24 @@ namespace Annoy_o_Bot
             }
         }
 
-        private static async Task<IList<(string, Reminder)>> FindNewReminders(
-            CallbackModel.CommitModel[] commits, CallbackModel requestObject,
-            GitHubClient installationClient)
+        static async Task<List<(string, Reminder)>> LoadReminder(ICollection<string> filePaths, CallbackModel requestObject, GitHubClient installationClient)
         {
-            var reminderFiles = CommitParser.GetReminders(commits);
-            var results = new List<(string, Reminder)>(reminderFiles.Length); // potentially lower but never higher than number of files
-            foreach (string newFile in reminderFiles)
+            var results = new List<(string, Reminder)>(filePaths.Count); // potentially lower but never higher than number of files
+            foreach (var filePath in filePaths)
             {
-                var reminderParser = GetReminderParser(newFile);
-                if (reminderParser == null)
+                var parser = GetReminderParser(filePath);
+                if (parser == null)
                 {
                     // unsupported file type
                     continue;
                 }
 
                 var content = await installationClient.Repository.Content.GetAllContentsByRef(
-                    requestObject.Repository.Id, 
-                    newFile, 
+                    requestObject.Repository.Id,
+                    filePath,
                     requestObject.Ref);
-                var reminder = reminderParser.Parse(content.First().Content);
-                results.Add((newFile, reminder));
+                var reminder = parser.Parse(content.First().Content);
+                results.Add((filePath, reminder));
             }
 
             return results;
@@ -174,11 +202,9 @@ namespace Annoy_o_Bot
             return $"{request.Installation.Id}-{request.Repository.Id}-{fileName.Split('/').Last()}";
         }
 
-        private static async Task DeleteRemovedReminders(IDocumentClient documentClient, ILogger log,
-            CallbackModel requestObject, GitHubClient client)
+        static async Task DeleteRemovedReminders(ICollection<string> deletedFiles, IDocumentClient documentClient, ILogger log, CallbackModel requestObject, GitHubClient client)
         {
-            var deletedReminders = CommitParser.GetDeletedReminders(requestObject.Commits);
-            foreach (var deletedReminder in deletedReminders)
+            foreach (var deletedReminder in deletedFiles)
             {
                 var reminderParser = GetReminderParser(deletedReminder);
                 if (reminderParser == null)
@@ -192,7 +218,7 @@ namespace Annoy_o_Bot
                     var documentId = BuildDocumentId(requestObject, deletedReminder);
                     var documentUri = UriFactory.CreateDocumentUri("annoydb", "reminders", documentId);
                     await documentClient.DeleteDocumentAsync(documentUri,
-                        new RequestOptions() {PartitionKey = new PartitionKey(documentId)});
+                        new RequestOptions {PartitionKey = new PartitionKey(documentId)});
                     await CreateCommitComment(client, requestObject, $"Deleted reminder '{deletedReminder}'");
                 }
                 catch (Exception e)
@@ -202,12 +228,11 @@ namespace Annoy_o_Bot
                         client, 
                         requestObject, 
                         $"Failed to delete reminder {deletedReminder}: {string.Join(Environment.NewLine, e.Message, e.StackTrace)}");
-                    throw;
                 }
             }
         }
 
-        private static ReminderParser? GetReminderParser(string filePath)
+        static ReminderParser? GetReminderParser(string filePath)
         {
             if (filePath.EndsWith(".json", StringComparison.InvariantCultureIgnoreCase))
             {
