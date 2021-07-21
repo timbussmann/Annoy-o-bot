@@ -67,6 +67,7 @@ namespace Annoy_o_Bot
                     {
                         // Next Reminder might have been reset due to an update, so we will just recalculate it.
                         reminder.CalculateNextReminder(now);
+                        log.LogWarning($"Found LastReminder ({reminder.LastReminder:g}) > NextReminder ({reminder.NextReminder:g}) in reminder {reminder.Id}");
                         await documents.AddAsync(reminder);
                     }
                 }
