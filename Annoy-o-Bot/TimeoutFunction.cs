@@ -15,9 +15,9 @@ namespace Annoy_o_Bot
             //[HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
             [TimerTrigger("0 */10 * * * *", RunOnStartup = false)]TimerInfo timer, // once every 10 minutes
             [CosmosDB(CallbackHandler.dbName,
-                CallbackHandler.collectionId, 
+                CallbackHandler.collectionId,
                 ConnectionStringSetting = "CosmosDBConnection",
-                SqlQuery = @"SELECT * FROM c WHERE GetCurrentDateTime() >= c.NextReminder")]
+                SqlQuery = "SELECT TOP 50 * FROM c WHERE GetCurrentDateTime() >= c.NextReminder ORDER BY c.NextReminder ASC")]
             IEnumerable<ReminderDocument> dueReminders,
             [CosmosDB(CallbackHandler.dbName,
                 CallbackHandler.collectionId,
@@ -85,5 +85,3 @@ namespace Annoy_o_Bot
         
     }
 }
-
-//TODO unbounded query
