@@ -13,7 +13,7 @@ The file supports the following properties:
 | --- | --- | --- | --- |
 | title | string | mandatory | The title of the issue being created. |
 | message | string | mandatory | The issue description for the issue being created. See https://yaml-multiline.info/ on how to create multi-line reminder messages using YAML. |
-| label | string array | optional | An array of labels to add |
+| labels | string array | optional | An array of labels to add |
 | assignee | string | optional | A `;` deliminited list of users/teams being assigned to the issue. |
 | date | string | mandatory | A [ISO 8601 standard](http://en.wikipedia.org/wiki/ISO_8601) date string indicating when the issue should be created the first time. |
 | interval | string | mandatory | Defines the interval granularity in which a new issue should be created after the first date. See [interval description](#intervals) for more detail. |
