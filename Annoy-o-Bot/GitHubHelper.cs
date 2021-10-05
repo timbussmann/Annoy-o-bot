@@ -6,8 +6,42 @@ using Octokit;
 
 namespace Annoy_o_Bot
 {
+    using System.Security.Cryptography;
+    using Microsoft.AspNetCore.Http;
+
     public class GitHubHelper
     {
+        static string callbackSecret = Environment.GetEnvironmentVariable("WebhookSecret");
+        static HMACSHA256 hmac = new(Encoding.UTF8.GetBytes(callbackSecret));
+
+        /// <summary>
+        /// Validates whether the request is indeed coming from GitHub using the webhook secret.
+        /// </summary>
+        public static void ValidateRequest(HttpRequest request)
+        {
+            if (!request.Headers.TryGetValue("X-Hub-Signature-256", out var callbackSignature))
+            {
+                throw new Exception("Incoming callback request does not contain a 'X-Hub-Signature' header");
+            }
+
+            var hash = hmac.ComputeHash(request.Body);
+            request.Body.Position = 0;
+
+            //TODO use Convert.ToHexString with .NET 5
+            StringBuilder builder = new StringBuilder("sha256=");
+            foreach (var b in hash)
+            {
+                builder.Append(b.ToString("x2"));
+            }
+            var hashString = builder.ToString();
+
+
+            if (callbackSignature != hashString)
+            {
+                throw new Exception($"Request payload body signature ('{hashString}') does not match provided signature ({callbackSignature})");
+            }
+        }
+
         public static async Task<GitHubClient> GetInstallationClient(long installationId)
         {
             // Use GitHubJwt library to create the GitHubApp Jwt Token using our private certificate PEM file
