@@ -26,6 +26,7 @@ namespace Annoy_o_Bot
             [CosmosDB(dbName, collectionId, ConnectionStringSetting = "CosmosDBConnection")]IDocumentClient documentClient,
             ILogger log)
         {
+            GitHubHelper.ValidateRequest(req);
             if (!req.Headers.TryGetValue("X-GitHub-Event", out var callbackEvent) || callbackEvent != "push")
             {
                 // this typically seem to be installation related events.
