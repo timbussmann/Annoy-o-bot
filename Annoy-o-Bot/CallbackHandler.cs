@@ -29,9 +29,12 @@ namespace Annoy_o_Bot
             GitHubHelper.ValidateRequest(req);
             if (!req.Headers.TryGetValue("X-GitHub-Event", out var callbackEvent) || callbackEvent != "push")
             {
-                // this typically seem to be installation related events.
-                // Or check_run (action:requested/rerequested) / check_suite events.
-                log.LogWarning($"Non-push callback. 'X-GitHub-Event': '{callbackEvent}'");
+                if (callbackEvent != "check_suite") // ignore check_suite events
+                {
+                    // this typically seem to be installation related events.
+                    log.LogWarning($"Non-push callback. 'X-GitHub-Event': '{callbackEvent}'");
+                }
+                
                 return new OkResult();
             }
 
