@@ -33,6 +33,7 @@ namespace Annoy_o_Bot
             public long Id { get; set; }
             [JsonProperty("default_branch")]
             public string DefaultBranch { get; set; }
+            public string Name { get; set; }
         }
 
         public class PusherModel

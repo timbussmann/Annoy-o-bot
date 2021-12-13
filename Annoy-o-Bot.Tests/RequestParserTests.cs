@@ -16,6 +16,7 @@ namespace Annoy_o_Bot.Tests
 
             Assert.Equal(179716425L, result.Repository.Id);
             Assert.Equal("master", result.Repository.DefaultBranch);
+            Assert.Equal("TitleTest", result.Repository.Name);
 
             var commit = Assert.Single(result.Commits);
             Assert.Equal("ba7c6f17f5beaafc603eca52b864356848865fec", commit.Id);

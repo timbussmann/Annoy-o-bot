@@ -44,7 +44,7 @@ namespace Annoy_o_Bot
                 return new OkResult();
             }
 
-            log.LogInformation($"Handling changes made to branch '{requestObject.Ref}' by head-commit '{requestObject.HeadCommit}'.");
+            log.LogInformation($"Handling changes made to branch '{requestObject.Repository.Name}{requestObject.Ref}' by head-commit '{requestObject.HeadCommit.Id}'.");
 
             var commitsToConsider = requestObject.Commits;
             if (commitsToConsider.LastOrDefault()?.Message?.StartsWith("Merge ") ?? false)
