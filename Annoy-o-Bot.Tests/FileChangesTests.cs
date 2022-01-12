@@ -69,7 +69,7 @@
 
             var result = CommitParser.GetChanges(commitModel);
 
-            Assert.Equal(1, result.Updated.Count);
+            Assert.Single(result.Updated);
             Assert.Contains("file1", result.Updated);
         }
 
@@ -116,9 +116,9 @@
 
             var result = CommitParser.GetChanges(commitModel);
 
-            Assert.Equal(0, result.Updated.Count);
-            Assert.Equal(0, result.New.Count);
-            Assert.Equal(1, result.Deleted.Count);
+            Assert.Empty(result.Updated);
+            Assert.Empty(result.New);
+            Assert.Single(result.Deleted);
             Assert.Contains("file1", result.Deleted);
         }
 
@@ -143,9 +143,9 @@
 
             var result = CommitParser.GetChanges(commitModel);
 
-            Assert.Equal(0, result.Updated.Count);
-            Assert.Equal(0, result.Deleted.Count);
-            Assert.Equal(1, result.New.Count);
+            Assert.Empty(result.Updated);
+            Assert.Empty(result.Deleted);
+            Assert.Single(result.New);
             Assert.Contains("file1", result.New);
         }
 
