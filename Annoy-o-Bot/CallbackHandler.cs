@@ -63,7 +63,7 @@ namespace Annoy_o_Bot
             if (requestObject.Ref.EndsWith($"/{requestObject.Repository.DefaultBranch}"))
             {
                 var newReminders = await LoadReminder(reminderChanges.New, requestObject, installationClient);
-                foreach ((string fileName, Reminder reminder) in newReminders)
+                foreach (var (fileName, reminder) in newReminders)
                 {
                     var reminderDocument = new ReminderDocument
                     {
@@ -81,7 +81,7 @@ namespace Annoy_o_Bot
                 }
 
                 var updatedReminders = await LoadReminder(reminderChanges.Updated, requestObject, installationClient);
-                foreach ((string fileName, Reminder reminder) in updatedReminders)
+                foreach (var (fileName, reminder) in updatedReminders)
                 {
                     var documentId = BuildDocumentId(requestObject, fileName);
                     var documentUri = UriFactory.CreateDocumentUri(dbName, collectionId, documentId);
@@ -145,7 +145,7 @@ namespace Annoy_o_Bot
             CallbackModel requestObject;
             try
             {
-                string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
+                var requestBody = await new StreamReader(req.Body).ReadToEndAsync();
                 requestObject = RequestParser.ParseJson(requestBody);
             }
             catch (Exception e)
