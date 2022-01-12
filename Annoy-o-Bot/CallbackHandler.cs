@@ -26,7 +26,7 @@ namespace Annoy_o_Bot
             [CosmosDB(dbName, collectionId, ConnectionStringSetting = "CosmosDBConnection")]IDocumentClient documentClient,
             ILogger log)
         {
-            GitHubHelper.ValidateRequest(req);
+            GitHubHelper.ValidateRequest(req, GitHubHelper.HMAC);
             if (!req.Headers.TryGetValue("X-GitHub-Event", out var callbackEvent) || callbackEvent != "push")
             {
                 if (callbackEvent != "check_suite") // ignore check_suite events

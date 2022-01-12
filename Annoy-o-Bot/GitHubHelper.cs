@@ -11,29 +11,22 @@ namespace Annoy_o_Bot
 
     public class GitHubHelper
     {
-        static string callbackSecret = Environment.GetEnvironmentVariable("WebhookSecret");
-        static HMACSHA256 hmac = new(Encoding.UTF8.GetBytes(callbackSecret));
+        static string? callbackSecret = Environment.GetEnvironmentVariable("WebhookSecret");
+        internal static HMACSHA256? HMAC = callbackSecret != null ? new HMACSHA256(Encoding.UTF8.GetBytes(callbackSecret)) : null;
 
         /// <summary>
         /// Validates whether the request is indeed coming from GitHub using the webhook secret.
         /// </summary>
-        public static void ValidateRequest(HttpRequest request)
+        public static void ValidateRequest(HttpRequest request, HMACSHA256? hmac)
         {
             if (!request.Headers.TryGetValue("X-Hub-Signature-256", out var callbackSignature))
             {
                 throw new Exception("Incoming callback request does not contain a 'X-Hub-Signature' header");
             }
 
-            var hash = hmac.ComputeHash(request.Body);
+            var hash = hmac?.ComputeHash(request.Body) ?? Array.Empty<byte>();
             request.Body.Position = 0;
-
-            //TODO use Convert.ToHexString with .NET 5
-            StringBuilder builder = new StringBuilder("sha256=");
-            foreach (var b in hash)
-            {
-                builder.Append(b.ToString("x2"));
-            }
-            var hashString = builder.ToString();
+            var hashString = $"sha256={Convert.ToHexString(hash)}";
 
 
             if (callbackSignature != hashString)
