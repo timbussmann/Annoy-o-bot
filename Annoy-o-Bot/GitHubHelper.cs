@@ -29,7 +29,7 @@ namespace Annoy_o_Bot
             var hashString = $"sha256={Convert.ToHexString(hash)}";
 
 
-            if (callbackSignature != hashString)
+            if (!string.Equals(callbackSignature, hashString, StringComparison.OrdinalIgnoreCase))
             {
                 throw new Exception($"Request payload body signature ('{hashString}') does not match provided signature ({callbackSignature})");
             }
