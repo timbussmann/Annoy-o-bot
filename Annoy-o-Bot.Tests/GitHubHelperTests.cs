@@ -4,7 +4,6 @@
     using System.IO;
     using System.Security.Cryptography;
     using System.Text;
-    using System.Text.Unicode;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Http.Internal;
     using Xunit;
@@ -21,7 +20,7 @@
             request.Body = new MemoryStream(Encoding.UTF8.GetBytes("Hello World!"));
             
             var hmac = new HMACSHA256(new byte[]{ 1, 3, 4, 8, 7, 2, 6});
-            GitHubHelper.ValidateRequest(request, hmac);
+            GitHubHelper.ValidateRequest(request, hmac, null);
         }
 
         [Fact]
@@ -32,7 +31,9 @@
             request.Body = new MemoryStream(Encoding.UTF8.GetBytes("Hello Wörld!"));
             
             var hmac = new HMACSHA256(new byte[] { 1, 3, 4, 8, 7, 2, 6 });
-            Assert.Throws<Exception>(() => GitHubHelper.ValidateRequest(request, hmac));
+            Assert.Throws<Exception>(() => GitHubHelper.ValidateRequest(request, hmac, null));
+        }
+
         }
     }
 }

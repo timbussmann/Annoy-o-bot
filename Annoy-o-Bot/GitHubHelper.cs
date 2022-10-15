@@ -1,7 +1,10 @@
 ﻿using System;
+using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using GitHubJwt;
+using Microsoft.Extensions.Logging;
 using Octokit;
 
 namespace Annoy_o_Bot
@@ -12,14 +15,14 @@ namespace Annoy_o_Bot
     public class GitHubHelper
     {
         static string? callbackSecret = Environment.GetEnvironmentVariable("WebhookSecret");
-        internal static HMACSHA256? HMAC = callbackSecret != null ? new HMACSHA256(Encoding.UTF8.GetBytes(callbackSecret)) : null;
+        internal static HMACSHA256? SHA256 = callbackSecret != null ? new HMACSHA256(Encoding.UTF8.GetBytes(callbackSecret)) : null;
 
         /// <summary>
         /// Validates whether the request is indeed coming from GitHub using the webhook secret.
         /// </summary>
-        public static void ValidateRequest(HttpRequest request, HMACSHA256? hmac)
+        public static void ValidateRequest(HttpRequest request, HMACSHA256? hmac, ILogger? logger)
         {
-            if (!request.Headers.TryGetValue("X-Hub-Signature-256", out var callbackSignature))
+            if (!request.Headers.TryGetValue("X-Hub-Signature-256", out var sha256Signature))
             {
                 throw new Exception("Incoming callback request does not contain a 'X-Hub-Signature' header");
             }
@@ -29,9 +32,12 @@ namespace Annoy_o_Bot
             var hashString = $"sha256={Convert.ToHexString(hash)}";
 
 
-            if (!string.Equals(callbackSignature, hashString, StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(sha256Signature, hashString, StringComparison.OrdinalIgnoreCase))
             {
-                throw new Exception($"Request payload body signature ('{hashString}') does not match provided signature ({callbackSignature})");
+                var exception = new Exception($"Request payload body signature ('{hashString}') does not match provided signature ({sha256Signature})");
+                logger?.LogError(exception, $"{Environment.MachineName}, {Environment.OSVersion}, {Environment.Version}, {RuntimeInformation.RuntimeIdentifier}, {RuntimeInformation.OSArchitecture}, {RuntimeInformation.OSDescription}, {RuntimeInformation.FrameworkDescription}, {RuntimeInformation.ProcessArchitecture}");
+                logger?.LogError(new StreamReader(request.Body).ReadToEnd());
+                throw exception;
             }
         }
 
