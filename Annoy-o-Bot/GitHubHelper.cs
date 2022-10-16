@@ -16,6 +16,7 @@ namespace Annoy_o_Bot
     {
         static string? callbackSecret = Environment.GetEnvironmentVariable("WebhookSecret");
         internal static HMACSHA256? SHA256 = callbackSecret != null ? new HMACSHA256(Encoding.UTF8.GetBytes(callbackSecret)) : null;
+        internal static HMACSHA1? SHA1 = callbackSecret != null ? new HMACSHA1(Encoding.UTF8.GetBytes(callbackSecret)) : null;
 
         /// <summary>
         /// Validates whether the request is indeed coming from GitHub using the webhook secret.
@@ -26,19 +27,39 @@ namespace Annoy_o_Bot
             {
                 throw new Exception("Incoming callback request does not contain a 'X-Hub-Signature' header");
             }
-
+            
             var hash = hmac?.ComputeHash(request.Body) ?? Array.Empty<byte>();
             request.Body.Position = 0;
             var hashString = $"sha256={Convert.ToHexString(hash)}";
-
-
+            
             if (!string.Equals(sha256Signature, hashString, StringComparison.OrdinalIgnoreCase))
             {
+                logger?.LogWarning($"Validation mismatch. {Environment.MachineName}, {Environment.OSVersion}, {Environment.Version}, {RuntimeInformation.RuntimeIdentifier}, {RuntimeInformation.OSArchitecture}, {RuntimeInformation.OSDescription}, {RuntimeInformation.FrameworkDescription}, {RuntimeInformation.ProcessArchitecture}");
+                if (ValidateRequestSha1(request, SHA1))
+                {
+                    logger.LogWarning("Failed SHA256 validation but passed SHA1 check.");
+                    return;
+                }
+
                 var exception = new Exception($"Request payload body signature ('{hashString}') does not match provided signature ({sha256Signature})");
-                logger?.LogError(exception, $"{Environment.MachineName}, {Environment.OSVersion}, {Environment.Version}, {RuntimeInformation.RuntimeIdentifier}, {RuntimeInformation.OSArchitecture}, {RuntimeInformation.OSDescription}, {RuntimeInformation.FrameworkDescription}, {RuntimeInformation.ProcessArchitecture}");
-                logger?.LogError(new StreamReader(request.Body).ReadToEnd());
+                logger?.LogWarning(new StreamReader(request.Body).ReadToEnd());
                 throw exception;
             }
+        }
+
+        public static bool ValidateRequestSha1(HttpRequest request, HMACSHA1? sha1)
+        {
+            if (!request.Headers.TryGetValue("X-Hub-Signature", out var sha1Signature))
+            {
+                return false;
+            }
+
+            var hash = sha1?.ComputeHash(request.Body) ?? Array.Empty<byte>();
+            request.Body.Position = 0;
+            var hexString = Convert.ToHexString(hash);
+            var hashString = $"sha1={hexString}";
+
+            return string.Equals(sha1Signature, hashString, StringComparison.OrdinalIgnoreCase);
         }
 
         public static async Task<GitHubClient> GetInstallationClient(long installationId)
