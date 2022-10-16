@@ -33,7 +33,5 @@
             var hmac = new HMACSHA256(new byte[] { 1, 3, 4, 8, 7, 2, 6 });
             Assert.Throws<Exception>(() => GitHubHelper.ValidateRequest(request, hmac, null));
         }
-
-        }
     }
 }
