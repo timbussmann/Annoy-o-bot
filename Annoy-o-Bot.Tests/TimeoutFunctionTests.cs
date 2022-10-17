@@ -82,24 +82,24 @@ namespace Annoy_o_Bot.Tests
         }
 
         [Theory]
-        [InlineData("2020.01.01", 1, "2020.01.01")]
-        [InlineData("2020.01.01", 2, "2020.01.01")]
-        [InlineData("2020.01.01", 5, "2020.01.01")]
-        [InlineData("2019.12.24", 1, "2019.12.24")]
+        [InlineData("2020.01.01", 1, null)]
+        [InlineData("2020.01.01", 2, null)]
+        [InlineData("2020.01.01", 5, null)]
+        [InlineData("2019.12.24", 1, null)]
         public void Should_not_calculate_next_reminder_date_once(string nextReminder, int? intervalStep,
             string expectedResult)
         {
             var result = CalculateReminder(Interval.Once, nextReminder, intervalStep);
 
-            Assert.Equal(DateTime.Parse(expectedResult), result);
+            Assert.Equal(expectedResult, result?.ToString("yyyy.MM.dd"));
         }
 
-        static DateTime CalculateReminder(Interval interval, string nextReminder, int? intervalStep)
+        static DateTime? CalculateReminder(Interval interval, string nextReminder, int? intervalStep)
         {
             var reminder = new ReminderDocument
             {
                 NextReminder = DateTime.Parse(nextReminder),
-                Reminder = new Reminder()
+                Reminder = new Reminder
                 {
                     Interval = interval,
                     IntervalStep = intervalStep
