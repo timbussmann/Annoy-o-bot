@@ -16,6 +16,8 @@ namespace Annoy_o_Bot
 {
     public static class CallbackHandler
     {
+        static string? callbackSecret = Environment.GetEnvironmentVariable("WebhookSecret");
+
         internal const string dbName = "annoydb";
         internal const string collectionId = "reminders";
 
@@ -26,7 +28,7 @@ namespace Annoy_o_Bot
             [CosmosDB(dbName, collectionId, ConnectionStringSetting = "CosmosDBConnection")]IDocumentClient documentClient,
             ILogger log)
         {
-            GitHubHelper.ValidateRequest(req, GitHubHelper.SHA256, log);
+            GitHubHelper.ValidateRequest(req, callbackSecret ?? throw new Exception("Missing 'WebhookSecret' env var"), log);
             if (!req.Headers.TryGetValue("X-GitHub-Event", out var callbackEvent) || callbackEvent != "push")
             {
                 if (callbackEvent != "check_suite") // ignore check_suite events
