@@ -12,7 +12,7 @@ namespace Annoy_o_Bot
         public long InstallationId { get; set; }
         public long RepositoryId { get; set; }
         public DateTime LastReminder { get; set; }
-        public DateTime NextReminder { get; set; }
+        public DateTime? NextReminder { get; set; }
         public string Path { get; set; } = null!;
 
         public void CalculateNextReminder(DateTime now)
@@ -23,6 +23,7 @@ namespace Annoy_o_Bot
                 switch (Reminder.Interval)
                 {
                     case Interval.Once:
+                        NextReminder = null;
                         break;
                     case Interval.Daily:
                         NextReminder = GetNextReminderDate(x => x.AddDays(intervalSteps));
@@ -43,7 +44,7 @@ namespace Annoy_o_Bot
 
             DateTime GetNextReminderDate(Func<DateTime, DateTime> incrementFunc)
             {
-                var next = NextReminder;
+                var next = NextReminder!.Value;
                 while (next <= now)
                 {
                     next = incrementFunc(next);
