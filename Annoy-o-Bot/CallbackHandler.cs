@@ -11,6 +11,7 @@ using Microsoft.Azure.Documents;
 using Microsoft.Azure.Documents.Client;
 using Microsoft.Extensions.Logging;
 using Octokit;
+using Annoy_o_Bot.Parser;
 
 namespace Annoy_o_Bot
 {
@@ -177,7 +178,7 @@ namespace Annoy_o_Bot
             var results = new List<(string, Reminder)>(filePaths.Count); // potentially lower but never higher than number of files
             foreach (var filePath in filePaths)
             {
-                var parser = GetReminderParser(filePath);
+                var parser = ReminderParser.GetParser(filePath);
                 if (parser == null)
                 {
                     // unsupported file type
@@ -212,7 +213,7 @@ namespace Annoy_o_Bot
         {
             foreach (var deletedReminder in deletedFiles)
             {
-                var reminderParser = GetReminderParser(deletedReminder);
+                var reminderParser = ReminderParser.GetParser(deletedReminder);
                 if (reminderParser == null)
                 {
                     // unsupported file type
@@ -237,23 +238,5 @@ namespace Annoy_o_Bot
                 }
             }
         }
-
-        static ReminderParser? GetReminderParser(string filePath)
-        {
-            if (filePath.EndsWith(".json", StringComparison.InvariantCultureIgnoreCase))
-            {
-                return JsonReminderParser.Value;
-            }
-
-            if (filePath.EndsWith(".yaml", StringComparison.InvariantCultureIgnoreCase))
-            {
-                return YamlReminderParser.Value;
-            }
-
-            return null;
-        }
-
-        static readonly Lazy<JsonReminderParser> JsonReminderParser = new Lazy<JsonReminderParser>(() => new JsonReminderParser());
-        static readonly Lazy<YamlReminderParser> YamlReminderParser = new Lazy<YamlReminderParser>(() => new YamlReminderParser());
     }
 }
