@@ -1,11 +1,16 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.29609.76
+# Visual Studio Version 17
+VisualStudioVersion = 17.3.32929.385
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Annoy-o-Bot", "Annoy-o-Bot\Annoy-o-Bot.csproj", "{05E58BAC-B65D-4AA9-87AE-FB5F8336F13D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Annoy-o-Bot.Tests", "Annoy-o-Bot.Tests\Annoy-o-Bot.Tests.csproj", "{1D681E09-2CAD-4F02-A77D-26794DEB32DC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Annoy-o-Bot.Tests", "Annoy-o-Bot.Tests\Annoy-o-Bot.Tests.csproj", "{1D681E09-2CAD-4F02-A77D-26794DEB32DC}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{57E68C3D-4FF8-4E2D-B8A3-4D9DEECC67AF}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

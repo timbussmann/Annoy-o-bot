@@ -1,9 +1,10 @@
 ﻿using System;
+using Annoy_o_Bot.Parser;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Xunit;
 
-namespace Annoy_o_Bot.Tests
+namespace Annoy_o_Bot.Tests.Parser
 {
     public class JsonReminderParserTests
     {
