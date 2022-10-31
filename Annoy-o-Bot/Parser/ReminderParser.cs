@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 
 namespace Annoy_o_Bot.Parser
 {
@@ -9,22 +10,13 @@ namespace Annoy_o_Bot.Parser
 
         public static ReminderParser? GetParser(string filePath)
         {
-            if (filePath.EndsWith(".json", StringComparison.InvariantCultureIgnoreCase))
+            var extension = Path.GetExtension(filePath).ToLower();
+            return extension switch
             {
-                return JsonReminderParser.Value;
-            }
-
-            if (filePath.EndsWith(".yaml", StringComparison.InvariantCultureIgnoreCase))
-            {
-                return YamlReminderParser.Value;
-            }
-
-            if (filePath.EndsWith(".yml", StringComparison.InvariantCultureIgnoreCase))
-            {
-                return YamlReminderParser.Value;
-            }
-
-            return null;
+                ".json" => JsonReminderParser.Value,
+                ".yaml" or ".yml" => YamlReminderParser.Value,
+                _ => null
+            };
         }
 
         public abstract Reminder Parse(string documentContent);
