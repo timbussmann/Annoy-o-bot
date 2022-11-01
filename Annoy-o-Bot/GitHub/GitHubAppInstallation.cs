@@ -7,7 +7,7 @@ namespace Annoy_o_Bot.GitHub;
 //TODO initialize repo id and remove from method params
 public class GitHubAppInstallation : IGitHubAppInstallation
 {
-    private GitHubClient installationClient;
+    private GitHubClient installationClient = null!;
 
     public async Task Initialize(long installationId)
     {

@@ -13,7 +13,7 @@ using Microsoft.Extensions.Logging;
 using Octokit;
 using Annoy_o_Bot.Parser;
 using Annoy_o_Bot.GitHub;
-using System.Reflection.Metadata;
+using Microsoft.Extensions.Configuration;
 
 namespace Annoy_o_Bot
 {
@@ -25,10 +25,12 @@ namespace Annoy_o_Bot
         internal const string collectionId = "reminders";
 
         private IGitHubAppInstallation githubClient;
+        private IConfiguration configuration;
 
-        public CallbackHandler(IGitHubAppInstallation githubClient)
+        public CallbackHandler(IGitHubAppInstallation githubClient, IConfiguration configuration)
         {
             this.githubClient = githubClient;
+            this.configuration = configuration;
         }
 
         [FunctionName("Callback")]
@@ -38,7 +40,7 @@ namespace Annoy_o_Bot
             [CosmosDB(dbName, collectionId, ConnectionStringSetting = "CosmosDBConnection")]IDocumentClient documentClient,
             ILogger log)
         {
-            GitHubHelper.ValidateRequest(req, callbackSecret ?? throw new Exception("Missing 'WebhookSecret' env var"), log);
+            GitHubHelper.ValidateRequest(req, configuration.GetValue<string>("WebhookSecret") ?? throw new Exception("Missing 'WebhookSecret' env var"), log);
             if (!req.Headers.TryGetValue("X-GitHub-Event", out var callbackEvent) || callbackEvent != "push")
             {
                 if (callbackEvent != "check_suite") // ignore check_suite events

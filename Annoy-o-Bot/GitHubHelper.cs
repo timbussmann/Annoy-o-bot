@@ -17,11 +17,11 @@ namespace Annoy_o_Bot
         /// <summary>
         /// Validates whether the request is indeed coming from GitHub using the webhook secret.
         /// </summary>
-        public static void ValidateRequest(HttpRequest request, string secret, ILogger? logger)
+        public static void ValidateRequest(HttpRequest request, string secret, ILogger logger)
         {
             if (!request.Headers.TryGetValue("X-Hub-Signature-256", out var sha256Signature))
             {
-                throw new Exception("Incoming callback request does not contain a 'X-Hub-Signature' header");
+                throw new Exception("Incoming callback request does not contain a 'X-Hub-Signature-256' header");
             }
 
             var hmacsha256 = new HMACSHA256(Encoding.UTF8.GetBytes(secret));
@@ -31,7 +31,7 @@ namespace Annoy_o_Bot
             
             if (!string.Equals(sha256Signature, hashString, StringComparison.OrdinalIgnoreCase))
             {
-                logger?.LogWarning($"Validation mismatch. {Environment.MachineName}, {Environment.OSVersion}, {Environment.Version}, {RuntimeInformation.RuntimeIdentifier}, {RuntimeInformation.OSArchitecture}, {RuntimeInformation.OSDescription}, {RuntimeInformation.FrameworkDescription}, {RuntimeInformation.ProcessArchitecture}");
+                logger.LogWarning($"Validation mismatch. {Environment.MachineName}, {Environment.OSVersion}, {Environment.Version}, {RuntimeInformation.RuntimeIdentifier}, {RuntimeInformation.OSArchitecture}, {RuntimeInformation.OSDescription}, {RuntimeInformation.FrameworkDescription}, {RuntimeInformation.ProcessArchitecture}");
                 var hmacsha1 = new HMACSHA1(Encoding.UTF8.GetBytes(secret));
                 if (ValidateRequestSha1(request, hmacsha1))
                 {
@@ -40,7 +40,7 @@ namespace Annoy_o_Bot
                 }
 
                 var exception = new Exception($"Request payload body signature ('{hashString}') does not match provided signature ({sha256Signature})");
-                logger?.LogWarning(new StreamReader(request.Body).ReadToEnd());
+                logger.LogWarning(new StreamReader(request.Body).ReadToEnd());
                 throw exception;
             }
         }
