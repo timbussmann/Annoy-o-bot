@@ -12,18 +12,27 @@ using Microsoft.Azure.Documents.Client;
 using Microsoft.Extensions.Logging;
 using Octokit;
 using Annoy_o_Bot.Parser;
+using Annoy_o_Bot.GitHub;
+using System.Reflection.Metadata;
 
 namespace Annoy_o_Bot
 {
-    public static class CallbackHandler
+    public class CallbackHandler
     {
         static string? callbackSecret = Environment.GetEnvironmentVariable("WebhookSecret");
 
         internal const string dbName = "annoydb";
         internal const string collectionId = "reminders";
 
+        private IGitHubAppInstallation githubClient;
+
+        public CallbackHandler(IGitHubAppInstallation githubClient)
+        {
+            this.githubClient = githubClient;
+        }
+
         [FunctionName("Callback")]
-        public static async Task<IActionResult> Run(
+        public async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
             [CosmosDB(dbName, collectionId, ConnectionStringSetting = "CosmosDBConnection")]IAsyncCollector<ReminderDocument> documents,
             [CosmosDB(dbName, collectionId, ConnectionStringSetting = "CosmosDBConnection")]IDocumentClient documentClient,
@@ -42,7 +51,7 @@ namespace Annoy_o_Bot
             }
 
             var requestObject = await ParseRequest(req, log);
-            var installationClient = await GitHubHelper.GetInstallationClient(requestObject.Installation.Id);
+            await githubClient.Initialize(requestObject.Installation.Id);
 
             if (requestObject.HeadCommit == null)
             {
@@ -65,7 +74,7 @@ namespace Annoy_o_Bot
 
             if (requestObject.Ref.EndsWith($"/{requestObject.Repository.DefaultBranch}"))
             {
-                var newReminders = await LoadReminder(reminderChanges.New, requestObject, installationClient);
+                var newReminders = await LoadReminder(reminderChanges.New, requestObject, githubClient);
                 foreach (var (fileName, reminder) in newReminders)
                 {
                     var reminderDocument = new ReminderDocument
@@ -79,11 +88,11 @@ namespace Annoy_o_Bot
                     };
 
                     await documents.AddAsync(reminderDocument);
-                    await CreateCommitComment(installationClient, requestObject,
+                    await githubClient.CreateComment(requestObject.Repository.Id, requestObject.HeadCommit.Id,
                         $"Created reminder '{reminder.Title}' for {reminder.Date:D}");
                 }
 
-                var updatedReminders = await LoadReminder(reminderChanges.Updated, requestObject, installationClient);
+                var updatedReminders = await LoadReminder(reminderChanges.Updated, requestObject, githubClient);
                 foreach (var (fileName, reminder) in updatedReminders)
                 {
                     var documentId = BuildDocumentId(requestObject, fileName);
@@ -101,23 +110,23 @@ namespace Annoy_o_Bot
                     }
 
                     await documents.AddAsync(document);
-                    await CreateCommitComment(installationClient, requestObject,
+                    await githubClient.CreateComment(requestObject.Repository.Id, requestObject.HeadCommit.Id,
                         $"Updated reminder '{reminder.Title}' for {document.NextReminder:D}");
                 }
 
-                await DeleteRemovedReminders(fileChanges.Deleted, documentClient, log, requestObject, installationClient);
+                await DeleteRemovedReminders(fileChanges.Deleted, documentClient, log, requestObject, githubClient);
             }
             else
             {
                 List<(string, Reminder)> newReminders;
                 try
                 {
-                    newReminders = await LoadReminder(reminderChanges.New, requestObject, installationClient);
-                    newReminders.AddRange(await LoadReminder(reminderChanges.Updated, requestObject, installationClient));
+                    newReminders = await LoadReminder(reminderChanges.New, requestObject, githubClient);
+                    newReminders.AddRange(await LoadReminder(reminderChanges.Updated, requestObject, githubClient));
                 }
                 catch (Exception e)
                 {
-                    await TryCreateCheckRun(installationClient, requestObject.Repository.Id,
+                    await TryCreateCheckRun(githubClient, requestObject.Repository.Id,
                         new NewCheckRun("annoy-o-bot", requestObject.HeadCommit.Id)
                         {
                             Status = CheckStatus.Completed,
@@ -131,7 +140,7 @@ namespace Annoy_o_Bot
 
                 if (newReminders.Any())
                 {
-                    await TryCreateCheckRun(installationClient, requestObject.Repository.Id,
+                    await TryCreateCheckRun(githubClient, requestObject.Repository.Id,
                         new NewCheckRun("annoy-o-bot", requestObject.HeadCommit.Id)
                         {
                             Status = CheckStatus.Completed,
@@ -160,12 +169,12 @@ namespace Annoy_o_Bot
             return requestObject;
         }
 
-        private static async Task TryCreateCheckRun(GitHubClient installationClient, long repositoryId, NewCheckRun checkRun, ILogger logger)
+        private static async Task TryCreateCheckRun(IGitHubAppInstallation installationClient, long repositoryId, NewCheckRun checkRun, ILogger logger)
         {
             // Ignore check run failures for now. Check run permissions were added later, so users might not have granted permissions to add check runs.
             try
             {
-                await installationClient.Check.Run.Create(repositoryId, checkRun);
+                await installationClient.CreateCheckRun(checkRun, repositoryId);
             }
             catch (Exception e)
             {
@@ -173,7 +182,7 @@ namespace Annoy_o_Bot
             }
         }
 
-        static async Task<List<(string, Reminder)>> LoadReminder(ICollection<string> filePaths, CallbackModel requestObject, GitHubClient installationClient)
+        static async Task<List<(string, Reminder)>> LoadReminder(ICollection<string> filePaths, CallbackModel requestObject, IGitHubAppInstallation installationClient)
         {
             var results = new List<(string, Reminder)>(filePaths.Count); // potentially lower but never higher than number of files
             foreach (var filePath in filePaths)
@@ -185,23 +194,17 @@ namespace Annoy_o_Bot
                     continue;
                 }
 
-                var content = await installationClient.Repository.Content.GetAllContentsByRef(
-                    requestObject.Repository.Id,
-                    filePath,
-                    requestObject.Ref);
-                var reminder = parser.Parse(content.First().Content);
+                var content =
+                    await installationClient.ReadFileContent(filePath, requestObject.Repository.Id, requestObject.Ref);
+                //var content = await installationClient.Repository.Content.GetAllContentsByRef(
+                //    requestObject.Repository.Id,
+                //    filePath,
+                //    requestObject.Ref);
+                var reminder = parser.Parse(content);
                 results.Add((filePath, reminder));
             }
 
             return results;
-        }
-
-        static Task CreateCommitComment(GitHubClient client, CallbackModel request, string comment)
-        {
-            return client.Repository.Comment.Create(
-                request.Repository.Id,
-                request.HeadCommit.Id,
-                new NewCommitComment(comment));
         }
 
         static string BuildDocumentId(CallbackModel request, string fileName)
@@ -209,7 +212,7 @@ namespace Annoy_o_Bot
             return $"{request.Installation.Id}-{request.Repository.Id}-{fileName.Split('/').Last()}";
         }
 
-        static async Task DeleteRemovedReminders(ICollection<string> deletedFiles, IDocumentClient documentClient, ILogger log, CallbackModel requestObject, GitHubClient client)
+        static async Task DeleteRemovedReminders(ICollection<string> deletedFiles, IDocumentClient documentClient, ILogger log, CallbackModel requestObject, IGitHubAppInstallation client)
         {
             foreach (var deletedReminder in deletedFiles)
             {
@@ -226,14 +229,14 @@ namespace Annoy_o_Bot
                     var documentUri = UriFactory.CreateDocumentUri("annoydb", "reminders", documentId);
                     await documentClient.DeleteDocumentAsync(documentUri,
                         new RequestOptions {PartitionKey = new PartitionKey(documentId)});
-                    await CreateCommitComment(client, requestObject, $"Deleted reminder '{deletedReminder}'");
+
+                    await client.CreateComment(requestObject.Repository.Id, requestObject.HeadCommit.Id,
+                        $"Deleted reminder '{deletedReminder}'");
                 }
                 catch (Exception e)
                 {
                     log.LogError(e, "Failed to delete reminder");
-                    await CreateCommitComment(
-                        client, 
-                        requestObject, 
+                    await client.CreateComment(requestObject.Repository.Id, requestObject.HeadCommit.Id,
                         $"Failed to delete reminder {deletedReminder}: {string.Join(Environment.NewLine, e.Message, e.StackTrace)}");
                 }
             }
