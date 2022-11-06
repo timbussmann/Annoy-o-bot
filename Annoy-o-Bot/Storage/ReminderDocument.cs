@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 
 namespace Annoy_o_Bot
 {
-    public class ReminderDocument
+    public class ReminderDocument : ICloneable
     {
         // assigning null using the null-forgiving operator because the value will always be set
         [JsonProperty("id")]
@@ -51,6 +51,11 @@ namespace Annoy_o_Bot
                 }
                 return next;
             }
+        }
+
+        public object Clone()
+        {
+            return this.MemberwiseClone();
         }
     }
 }

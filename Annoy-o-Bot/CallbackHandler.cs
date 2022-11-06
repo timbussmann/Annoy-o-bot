@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Annoy_o_Bot.CosmosDB;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
@@ -19,25 +20,22 @@ namespace Annoy_o_Bot
 {
     public class CallbackHandler
     {
-        static string? callbackSecret = Environment.GetEnvironmentVariable("WebhookSecret");
-
-        internal const string dbName = "annoydb";
-        internal const string collectionId = "reminders";
-
         private IGitHubAppInstallation githubClient;
         private IConfiguration configuration;
+        private ICosmosClientWrapper cosmosWrapper;
 
-        public CallbackHandler(IGitHubAppInstallation githubClient, IConfiguration configuration)
+        public CallbackHandler(IGitHubAppInstallation githubClient, IConfiguration configuration, ICosmosClientWrapper cosmosWrapper)
         {
             this.githubClient = githubClient;
             this.configuration = configuration;
+            this.cosmosWrapper = cosmosWrapper;
         }
 
         [FunctionName("Callback")]
         public async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
-            [CosmosDB(dbName, collectionId, ConnectionStringSetting = "CosmosDBConnection")]IAsyncCollector<ReminderDocument> documents,
-            [CosmosDB(dbName, collectionId, ConnectionStringSetting = "CosmosDBConnection")]IDocumentClient documentClient,
+            [CosmosDB(CosmosClientWrapper.dbName, CosmosClientWrapper.collectionId, ConnectionStringSetting = "CosmosDBConnection")]IAsyncCollector<ReminderDocument> documents,
+            [CosmosDB(CosmosClientWrapper.dbName, CosmosClientWrapper.collectionId, ConnectionStringSetting = "CosmosDBConnection")]IDocumentClient documentClient,
             ILogger log)
         {
             GitHubHelper.ValidateRequest(req, configuration.GetValue<string>("WebhookSecret") ?? throw new Exception("Missing 'WebhookSecret' env var"), log);
@@ -95,25 +93,22 @@ namespace Annoy_o_Bot
                 }
 
                 var updatedReminders = await LoadReminder(reminderChanges.Updated, requestObject, githubClient);
-                foreach (var (fileName, reminder) in updatedReminders)
+                foreach (var (fileName, updatedReminder) in updatedReminders)
                 {
-                    var documentId = BuildDocumentId(requestObject, fileName);
-                    var documentUri = UriFactory.CreateDocumentUri(dbName, collectionId, documentId);
-                    var existingReminder = await documentClient.ReadDocumentAsync<ReminderDocument>(documentUri, new RequestOptions { PartitionKey = new PartitionKey(documentId) });
+                    var existingReminder = await cosmosWrapper.LoadReminder(documentClient, fileName, requestObject.Installation.Id, requestObject.Repository.Id);
 
-                    var document = existingReminder.Document;
-                    document.Reminder = reminder;
+                    existingReminder.Reminder = updatedReminder;
                     // recalculate next reminder due time from scratch:
-                    document.NextReminder = new DateTime(reminder.Date.Ticks, DateTimeKind.Utc);
+                    existingReminder.NextReminder = new DateTime(updatedReminder.Date.Ticks, DateTimeKind.Utc);
 
-                    if (document.LastReminder >= document.NextReminder)
+                    if (existingReminder.LastReminder >= existingReminder.NextReminder)
                     {
-                        document.CalculateNextReminder(DateTime.Now);
+                        existingReminder.CalculateNextReminder(DateTime.Now);
                     }
 
-                    await documents.AddAsync(document);
+                    await documents.AddAsync(existingReminder);
                     await githubClient.CreateComment(requestObject.Repository.Id, requestObject.HeadCommit.Id,
-                        $"Updated reminder '{reminder.Title}' for {document.NextReminder:D}");
+                        $"Updated reminder '{updatedReminder.Title}' for {existingReminder.NextReminder:D}");
                 }
 
                 await DeleteRemovedReminders(fileChanges.Deleted, documentClient, log, requestObject, githubClient);

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Annoy_o_Bot.CosmosDB;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using Octokit;
@@ -14,13 +15,13 @@ namespace Annoy_o_Bot
         public static async Task Run(
             //[HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
             [TimerTrigger("0 */10 * * * *", RunOnStartup = false)]TimerInfo timer, // once every 10 minutes
-            [CosmosDB(CallbackHandler.dbName,
-                CallbackHandler.collectionId,
+            [CosmosDB(CosmosClientWrapper.dbName,
+                CosmosClientWrapper.collectionId,
                 ConnectionStringSetting = "CosmosDBConnection",
                 SqlQuery = "SELECT TOP 50 * FROM c WHERE GetCurrentDateTime() >= c.NextReminder ORDER BY c.NextReminder ASC")]
             IEnumerable<ReminderDocument> dueReminders,
-            [CosmosDB(CallbackHandler.dbName,
-                CallbackHandler.collectionId,
+            [CosmosDB(CosmosClientWrapper.dbName,
+                CosmosClientWrapper.collectionId,
                 ConnectionStringSetting = "CosmosDBConnection")]
             IAsyncCollector<ReminderDocument> documents,
             ILogger log)
