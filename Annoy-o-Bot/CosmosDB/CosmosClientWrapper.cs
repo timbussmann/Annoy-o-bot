@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 using Microsoft.Azure.Documents;
 using Microsoft.Azure.Documents.Client;
 
@@ -13,7 +10,7 @@ public class CosmosClientWrapper : ICosmosClientWrapper
     internal const string dbName = "annoydb";
     internal const string collectionId = "reminders";
 
-    public async Task<ReminderDocument> LoadReminder(IDocumentClient cosmosClient, string fileName, long installationId,
+    public async Task<ReminderDocument?> LoadReminder(IDocumentClient cosmosClient, string fileName, long installationId,
         long repositoryId)
     {
         var documentId = BuildDocumentId(fileName, installationId, repositoryId);
@@ -23,6 +20,13 @@ public class CosmosClientWrapper : ICosmosClientWrapper
             documentUri,
             new RequestOptions { PartitionKey = new PartitionKey(documentId) });
         return existingReminder.Document;
+    }
+
+    public async Task Delete(IDocumentClient cosmosClient, string fileName, long installationId, long repositoryId)
+    {
+        var documentId = BuildDocumentId(fileName, installationId, repositoryId);
+        var documentUri = UriFactory.CreateDocumentUri(dbName, collectionId, documentId);
+        await cosmosClient.DeleteDocumentAsync(documentUri, new RequestOptions { PartitionKey = new PartitionKey(documentId) });
     }
 
     static string BuildDocumentId(string fileName, long installationId, long repositoryId)

@@ -9,7 +9,6 @@ using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Azure.Documents;
-using Microsoft.Azure.Documents.Client;
 using Microsoft.Extensions.Logging;
 using Octokit;
 using Annoy_o_Bot.Parser;
@@ -97,7 +96,7 @@ namespace Annoy_o_Bot
                 {
                     var existingReminder = await cosmosWrapper.LoadReminder(documentClient, fileName, requestObject.Installation.Id, requestObject.Repository.Id);
 
-                    existingReminder.Reminder = updatedReminder;
+                    existingReminder!.Reminder = updatedReminder;
                     // recalculate next reminder due time from scratch:
                     existingReminder.NextReminder = new DateTime(updatedReminder.Date.Ticks, DateTimeKind.Utc);
 
@@ -209,7 +208,7 @@ namespace Annoy_o_Bot
             return $"{request.Installation.Id}-{request.Repository.Id}-{fileName.Split('/').Last()}";
         }
 
-        static async Task DeleteRemovedReminders(ICollection<string> deletedFiles, IDocumentClient documentClient, ILogger log, CallbackModel requestObject, IGitHubAppInstallation client)
+        async Task DeleteRemovedReminders(ICollection<string> deletedFiles, IDocumentClient documentClient, ILogger log, CallbackModel requestObject, IGitHubAppInstallation client)
         {
             foreach (var deletedReminder in deletedFiles)
             {
@@ -222,11 +221,8 @@ namespace Annoy_o_Bot
 
                 try
                 {
-                    var documentId = BuildDocumentId(requestObject, deletedReminder);
-                    var documentUri = UriFactory.CreateDocumentUri("annoydb", "reminders", documentId);
-                    await documentClient.DeleteDocumentAsync(documentUri,
-                        new RequestOptions {PartitionKey = new PartitionKey(documentId)});
-
+                    await cosmosWrapper.Delete(documentClient, deletedReminder, requestObject.Installation.Id,
+                        requestObject.Repository.Id);
                     await client.CreateComment(requestObject.Repository.Id, requestObject.HeadCommit.Id,
                         $"Deleted reminder '{deletedReminder}'");
                 }

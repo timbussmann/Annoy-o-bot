@@ -1,6 +1,6 @@
 ﻿using Microsoft.Azure.WebJobs;
 
-namespace Annoy_o_Bot.AcceptanceTests;
+namespace Annoy_o_Bot.AcceptanceTests.Fakes;
 
 class FakeReminderCollection : IAsyncCollector<ReminderDocument>
 {
