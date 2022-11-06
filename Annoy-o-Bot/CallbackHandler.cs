@@ -50,7 +50,7 @@ namespace Annoy_o_Bot
             }
 
             var requestObject = await ParseRequest(req, log);
-            await githubClient.Initialize(requestObject.Installation.Id);
+            await githubClient.Initialize(requestObject.Installation.Id, requestObject.Repository.Id);
 
             if (requestObject.HeadCommit == null)
             {
@@ -87,7 +87,7 @@ namespace Annoy_o_Bot
                     };
 
                     await documents.AddAsync(reminderDocument);
-                    await githubClient.CreateComment(requestObject.Repository.Id, requestObject.HeadCommit.Id,
+                    await githubClient.CreateComment(requestObject.HeadCommit.Id,
                         $"Created reminder '{reminder.Title}' for {reminder.Date:D}");
                 }
 
@@ -106,7 +106,7 @@ namespace Annoy_o_Bot
                     }
 
                     await documents.AddAsync(existingReminder);
-                    await githubClient.CreateComment(requestObject.Repository.Id, requestObject.HeadCommit.Id,
+                    await githubClient.CreateComment(requestObject.HeadCommit.Id,
                         $"Updated reminder '{updatedReminder.Title}' for {existingReminder.NextReminder:D}");
                 }
 
@@ -170,7 +170,7 @@ namespace Annoy_o_Bot
             // Ignore check run failures for now. Check run permissions were added later, so users might not have granted permissions to add check runs.
             try
             {
-                await installationClient.CreateCheckRun(checkRun, repositoryId);
+                await installationClient.CreateCheckRun(checkRun);
             }
             catch (Exception e)
             {
@@ -191,7 +191,7 @@ namespace Annoy_o_Bot
                 }
 
                 var content =
-                    await installationClient.ReadFileContent(filePath, requestObject.Repository.Id, requestObject.Ref);
+                    await installationClient.ReadFileContent(filePath, requestObject.Ref);
                 //var content = await installationClient.Repository.Content.GetAllContentsByRef(
                 //    requestObject.Repository.Id,
                 //    filePath,
@@ -223,13 +223,13 @@ namespace Annoy_o_Bot
                 {
                     await cosmosWrapper.Delete(documentClient, deletedReminder, requestObject.Installation.Id,
                         requestObject.Repository.Id);
-                    await client.CreateComment(requestObject.Repository.Id, requestObject.HeadCommit.Id,
+                    await client.CreateComment(requestObject.HeadCommit.Id,
                         $"Deleted reminder '{deletedReminder}'");
                 }
                 catch (Exception e)
                 {
                     log.LogError(e, "Failed to delete reminder");
-                    await client.CreateComment(requestObject.Repository.Id, requestObject.HeadCommit.Id,
+                    await client.CreateComment(requestObject.HeadCommit.Id,
                         $"Failed to delete reminder {deletedReminder}: {string.Join(Environment.NewLine, e.Message, e.StackTrace)}");
                 }
             }

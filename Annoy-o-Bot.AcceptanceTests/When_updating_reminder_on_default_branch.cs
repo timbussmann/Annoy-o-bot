@@ -49,6 +49,9 @@ public class When_updating_reminder_on_default_branch : CallbackHandlerTest
 
         Assert.IsType<OkResult>(result);
 
+        Assert.Equal(callback.Installation.Id, appInstallation.InstallationId);
+        Assert.Equal(callback.Repository.Id, appInstallation.RepositoryId);
+
         var addedReminder = Assert.Single(documents.AddedDocuments);
         // Should not update certain properties
         Assert.Equal(storedReminder.InstallationId, addedReminder.InstallationId);

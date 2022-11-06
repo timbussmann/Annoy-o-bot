@@ -4,17 +4,18 @@ using Octokit;
 
 namespace Annoy_o_Bot.GitHub;
 
-//TODO initialize repo id and remove from method params
 public class GitHubAppInstallation : IGitHubAppInstallation
 {
     private GitHubClient installationClient = null!;
+    private long repositoryId;
 
-    public async Task Initialize(long installationId)
+    public async Task Initialize(long installationId, long repositoryId)
     {
+        this.repositoryId = repositoryId;
         installationClient = await GitHubHelper.GetInstallationClient(installationId);
     }
 
-    public async Task<string> ReadFileContent(string filePath, long repositoryId, string branchReference)
+    public async Task<string> ReadFileContent(string filePath, string branchReference)
     {
         var contents = await installationClient.Repository.Content.GetAllContentsByRef(
             repositoryId,
@@ -24,12 +25,12 @@ public class GitHubAppInstallation : IGitHubAppInstallation
         return contents.First().Content;
     }
 
-    public Task CreateCheckRun(NewCheckRun checkRun, long repositoryId)
+    public Task CreateCheckRun(NewCheckRun checkRun)
     {
         return installationClient.Check.Run.Create(repositoryId, checkRun);
     }
 
-    public Task CreateComment(long repositoryId, string commitId, string comment)
+    public Task CreateComment(string commitId, string comment)
     {
         return installationClient.Repository.Comment.Create(
             repositoryId,

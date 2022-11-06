@@ -9,33 +9,37 @@ class FakeGithubInstallation : IGitHubAppInstallation
 
     public long InstallationId { get; private set; }
 
-    public List<(string commitId, string comment)> Comments { get; set; } = new List<(string, string)>();
+    public long RepositoryId { get; private set; }
 
-    public Task Initialize(long installationId)
+    public List<(string commitId, string comment)> Comments { get; set; } = new();
+    
+    private readonly Dictionary<string, string> files = new();
+    
+    public Task Initialize(long installationId, long repositoryId)
     {
+        RepositoryId = repositoryId;
         InstallationId = installationId;
         Initialized = true;
         return Task.CompletedTask;
     }
 
-    private readonly Dictionary<string, string> files = new();
     public void AddFileContent(string filePath, string content)
     {
         files.Add(filePath, content);
     }
 
     //TODO test behavior when file does not exist
-    public Task<string> ReadFileContent(string filePath, long repositoryId, string branchReference)
+    public Task<string> ReadFileContent(string filePath, string branchReference)
     {
         return Task.FromResult(files[filePath]);
     }
 
-    public Task CreateCheckRun(NewCheckRun checkRun, long repositoryId)
+    public Task CreateCheckRun(NewCheckRun checkRun)
     {
         return Task.CompletedTask;
     }
 
-    public Task CreateComment(long repositoryId, string commitId, string comment)
+    public Task CreateComment(string commitId, string comment)
     {
         Comments.Add((commitId, comment));
         return Task.CompletedTask;

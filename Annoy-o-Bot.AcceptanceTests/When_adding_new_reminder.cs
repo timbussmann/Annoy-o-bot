@@ -44,6 +44,9 @@ public class When_adding_new_reminder_on_default_branch : CallbackHandlerTest
 
         Assert.IsType<OkResult>(result);
 
+        Assert.Equal(callback.Installation.Id, appInstallation.InstallationId);
+        Assert.Equal(callback.Repository.Id, appInstallation.RepositoryId);
+
         var addedReminder = Assert.Single(documents.AddedDocuments);
         Assert.Equal(callback.Installation.Id, addedReminder.InstallationId);
         Assert.Equal(callback.Repository.Id, addedReminder.RepositoryId);

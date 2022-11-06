@@ -50,6 +50,9 @@ public class When_deleting_reminder_on_default_branch : CallbackHandlerTest
         
         Assert.IsType<OkResult>(result);
 
+        Assert.Equal(callback.Installation.Id, appInstallation.InstallationId);
+        Assert.Equal(callback.Repository.Id, appInstallation.RepositoryId);
+
         Assert.Empty(documents.AddedDocuments);
 
         Assert.Null(cosmosDB.StoredReminders[commit.Removed[0]]);
