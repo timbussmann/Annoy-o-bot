@@ -72,6 +72,9 @@ public class When_adding_new_reminder_to_default_branch
         Assert.Equal(reminder.Date, addedReminder.NextReminder);
         Assert.Equivalent(reminder, addedReminder.Reminder);
 
-        //TODO verify comment
+        var comments = Assert.Single(appInstallation.Comments.GroupBy(c => c.commitId));
+        Assert.Equal(headCommit.Id, comments.Key);
+        var comment = Assert.Single(comments);
+        Assert.Contains($"Created reminder '{reminder.Title}'", comment.comment);
     }
 }

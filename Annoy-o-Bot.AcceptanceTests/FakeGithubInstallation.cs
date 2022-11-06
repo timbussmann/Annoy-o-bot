@@ -9,6 +9,8 @@ class FakeGithubInstallation : IGitHubAppInstallation
 
     public long InstallationId { get; private set; }
 
+    public List<(string commitId, string comment)> Comments { get; set; } = new List<(string, string)>();
+
     public Task Initialize(long installationId)
     {
         this.InstallationId = installationId;
@@ -35,6 +37,7 @@ class FakeGithubInstallation : IGitHubAppInstallation
 
     public Task CreateComment(long repositoryId, string commitId, string comment)
     {
+        Comments.Add((commitId, comment));
         return Task.CompletedTask;
     }
 }
