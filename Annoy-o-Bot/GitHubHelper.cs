@@ -39,7 +39,7 @@ namespace Annoy_o_Bot
                     return;
                 }
 
-                var exception = new Exception($"Request payload body signature ('{hashString}') does not match provided signature ({sha256Signature})");
+                var exception = new Exception($"Computed request payload signature ('{hashString}') does not match provided signature ('{sha256Signature}')");
                 logger.LogWarning(new StreamReader(request.Body).ReadToEnd());
                 throw exception;
             }
