@@ -40,7 +40,7 @@ public class CallbackHandlerTest
             Installation = new CallbackModel.InstallationModel() { Id = Random.Shared.NextInt64() },
             Repository = new CallbackModel.RepositoryModel() { Id = Random.Shared.NextInt64(), DefaultBranch = defaultBranch },
             Ref = $"refs/heads/{currentBranch ?? defaultBranch}",
-            HeadCommit = commits[0],
+            HeadCommit = commits.FirstOrDefault(),
             Commits = commits
         };
     }
