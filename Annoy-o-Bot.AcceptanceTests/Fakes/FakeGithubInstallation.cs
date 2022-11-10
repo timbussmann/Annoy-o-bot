@@ -12,6 +12,8 @@ class FakeGithubInstallation : IGitHubAppInstallation
     public long RepositoryId { get; private set; }
 
     public List<(string commitId, string comment)> Comments { get; set; } = new();
+
+    public List<NewCheckRun> CheckRuns { get; set; } = new();
     
     private readonly Dictionary<string, string> files = new();
     
@@ -36,6 +38,7 @@ class FakeGithubInstallation : IGitHubAppInstallation
 
     public Task CreateCheckRun(NewCheckRun checkRun)
     {
+        CheckRuns.Add(checkRun);
         return Task.CompletedTask;
     }
 

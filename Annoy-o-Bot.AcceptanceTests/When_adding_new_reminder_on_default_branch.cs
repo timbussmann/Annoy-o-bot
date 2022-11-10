@@ -6,10 +6,6 @@ using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Annoy_o_Bot.AcceptanceTests;
 
-//TODO: When creating reminder on non-default branch
-//TODO: When updating reminder on non-default branch
-//TODO: When deleting reminder on non-default branch
-
 public class When_adding_new_reminder_on_default_branch : CallbackHandlerTest
 {
     [Fact]
