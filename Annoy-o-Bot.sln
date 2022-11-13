@@ -12,7 +12,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Annoy-o-Bot.AcceptanceTests", "Annoy-o-Bot.AcceptanceTests\Annoy-o-Bot.AcceptanceTests.csproj", "{F15BA5E7-B65E-4AA7-9C2D-A9272083A8B0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Annoy-o-Bot.AcceptanceTests", "Annoy-o-Bot.AcceptanceTests\Annoy-o-Bot.AcceptanceTests.csproj", "{F15BA5E7-B65E-4AA7-9C2D-A9272083A8B0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Annoy-o-Bot.CosmosDB.Tests", "Annoy-o-Bot.CosmosDB.Tests\Annoy-o-Bot.CosmosDB.Tests.csproj", "{D48143F8-E140-426F-8147-A2C8CE45FBDD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -32,6 +34,10 @@ Global
 		{F15BA5E7-B65E-4AA7-9C2D-A9272083A8B0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F15BA5E7-B65E-4AA7-9C2D-A9272083A8B0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F15BA5E7-B65E-4AA7-9C2D-A9272083A8B0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D48143F8-E140-426F-8147-A2C8CE45FBDD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D48143F8-E140-426F-8147-A2C8CE45FBDD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D48143F8-E140-426F-8147-A2C8CE45FBDD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D48143F8-E140-426F-8147-A2C8CE45FBDD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

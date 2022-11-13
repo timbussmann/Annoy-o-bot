@@ -1,6 +1,8 @@
 ﻿using System.Text.Json;
 using Annoy_o_Bot.AcceptanceTests.Fakes;
+using Annoy_o_Bot.CosmosDB;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Azure.Documents.Client;
 using Microsoft.Extensions.Logging.Abstractions;
 using Octokit;
 using Xunit;
@@ -33,13 +35,14 @@ public class When_adding_new_reminder_on_non_default_branch : CallbackHandlerTes
         var appInstallation = new FakeGithubInstallation();
         appInstallation.AddFileContent(callback.Commits[0].Added[0], JsonSerializer.Serialize(reminder));
 
-        FakeReminderCollection documents = new FakeReminderCollection();
-        var handler = new CallbackHandler(appInstallation, configurationBuilder.Build(), new FakeCosmosWrapper(callback.Installation.Id, callback.Repository.Id));
-        var result = await handler.Run(request, documents, null!, NullLogger.Instance);
+        var cosmosWrapper = new CosmosClientWrapper();
+        var handler = new CallbackHandler(appInstallation, configurationBuilder.Build(), cosmosWrapper);
+
+        var result = await handler.Run(request, documentClient, NullLogger.Instance);
 
         Assert.IsType<OkResult>(result);
 
-        Assert.Empty(documents.AddedDocuments);
+        Assert.Null(await cosmosWrapper.LoadReminder(documentClient, commit.Added[0], callback.Installation.Id, callback.Repository.Id));
 
         Assert.Equal(callback.Installation.Id, appInstallation.InstallationId);
         Assert.Equal(callback.Repository.Id, appInstallation.RepositoryId);
@@ -71,12 +74,12 @@ public class When_adding_new_reminder_on_non_default_branch : CallbackHandlerTes
         var appInstallation = new FakeGithubInstallation();
         appInstallation.AddFileContent(callback.Commits[0].Added[0], "Invalid reminder definition");
 
-        FakeReminderCollection documents = new FakeReminderCollection();
-        var handler = new CallbackHandler(appInstallation, configurationBuilder.Build(), new FakeCosmosWrapper(callback.Installation.Id, callback.Repository.Id));
+        var cosmosWrapper = new CosmosClientWrapper();
+        var handler = new CallbackHandler(appInstallation, configurationBuilder.Build(), cosmosWrapper);
 
-        await Assert.ThrowsAnyAsync<Exception>(() => handler.Run(request, documents, null!, NullLogger.Instance));
+        await Assert.ThrowsAnyAsync<Exception>(() => handler.Run(request, documentClient, NullLogger.Instance));
 
-        Assert.Empty(documents.AddedDocuments);
+        Assert.Null(await cosmosWrapper.LoadReminder(documentClient, commit.Added[0], callback.Installation.Id, callback.Repository.Id));
 
         Assert.Equal(callback.Installation.Id, appInstallation.InstallationId);
         Assert.Equal(callback.Repository.Id, appInstallation.RepositoryId);
@@ -89,5 +92,9 @@ public class When_adding_new_reminder_on_non_default_branch : CallbackHandlerTes
         Assert.Equal(CheckStatus.Completed, checkRun.Status);
         Assert.Equal(CheckConclusion.Failure, checkRun.Conclusion);
         Assert.Contains("Invalid reminder definition", checkRun.Output.Title);
+    }
+
+    public When_adding_new_reminder_on_non_default_branch(CosmosFixture cosmosFixture) : base(cosmosFixture)
+    {
     }
 }

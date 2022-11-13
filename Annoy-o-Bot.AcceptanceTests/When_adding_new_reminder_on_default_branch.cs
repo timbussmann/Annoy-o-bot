@@ -1,4 +1,5 @@
 ﻿using Annoy_o_Bot.AcceptanceTests.Fakes;
+using Annoy_o_Bot.CosmosDB;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
@@ -32,16 +33,19 @@ public class When_adding_new_reminder_on_default_branch : CallbackHandlerTest
         var appInstallation = new FakeGithubInstallation();
         appInstallation.AddFileContent(callback.Commits[0].Added[0], JsonSerializer.Serialize(reminder));
 
-        FakeReminderCollection documents = new FakeReminderCollection();
-        var handler = new CallbackHandler(appInstallation, configurationBuilder.Build(), new FakeCosmosWrapper(callback.Installation.Id, callback.Repository.Id));
-        var result = await handler.Run(request, documents, null!, NullLogger.Instance);
+        var cosmosWrapper = new CosmosClientWrapper();
+
+        var handler = new CallbackHandler(appInstallation, configurationBuilder.Build(), cosmosWrapper);
+        var result = await handler.Run(request, documentClient, NullLogger.Instance);
 
         Assert.IsType<OkResult>(result);
 
         Assert.Equal(callback.Installation.Id, appInstallation.InstallationId);
         Assert.Equal(callback.Repository.Id, appInstallation.RepositoryId);
 
-        var addedReminder = Assert.Single(documents.AddedDocuments);
+        var addedReminder = await cosmosWrapper.LoadReminder(documentClient, commit.Added[0], callback.Installation.Id,
+            callback.Repository.Id);
+        Assert.NotNull(addedReminder);
         Assert.Equal(callback.Installation.Id, addedReminder.InstallationId);
         Assert.Equal(callback.Repository.Id, addedReminder.RepositoryId);
         Assert.Equal(callback.Commits[0].Added[0], addedReminder.Path);
@@ -53,5 +57,9 @@ public class When_adding_new_reminder_on_default_branch : CallbackHandlerTest
         Assert.Equal(commit.Id, comments.Key);
         var comment = Assert.Single(comments);
         Assert.Contains($"Created reminder '{reminder.Title}'", comment.comment);
+    }
+
+    public When_adding_new_reminder_on_default_branch(CosmosFixture cosmosFixture) : base(cosmosFixture)
+    {
     }
 }

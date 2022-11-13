@@ -33,7 +33,6 @@ namespace Annoy_o_Bot
         [FunctionName("Callback")]
         public async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
-            [CosmosDB(CosmosClientWrapper.dbName, CosmosClientWrapper.collectionId, ConnectionStringSetting = "CosmosDBConnection")]IAsyncCollector<ReminderDocument> documents,
             [CosmosDB(CosmosClientWrapper.dbName, CosmosClientWrapper.collectionId, ConnectionStringSetting = "CosmosDBConnection")]IDocumentClient documentClient,
             ILogger log)
         {
@@ -78,7 +77,6 @@ namespace Annoy_o_Bot
                 {
                     var reminderDocument = new ReminderDocument
                     {
-                        Id = BuildDocumentId(requestObject, fileName),
                         InstallationId = requestObject.Installation.Id,
                         RepositoryId = requestObject.Repository.Id,
                         Reminder = reminder,
@@ -86,7 +84,7 @@ namespace Annoy_o_Bot
                         Path = fileName
                     };
 
-                    await documents.AddAsync(reminderDocument);
+                    await cosmosWrapper.AddOrUpdateReminder(documentClient, reminderDocument);
                     await githubClient.CreateComment(requestObject.HeadCommit.Id,
                         $"Created reminder '{reminder.Title}' for {reminder.Date:D}");
                 }
@@ -99,13 +97,13 @@ namespace Annoy_o_Bot
                     existingReminder!.Reminder = updatedReminder;
                     // recalculate next reminder due time from scratch:
                     existingReminder.NextReminder = new DateTime(updatedReminder.Date.Ticks, DateTimeKind.Utc);
-
                     if (existingReminder.LastReminder >= existingReminder.NextReminder)
                     {
+                        // reminder start date is in the past, re-calculate next reminder due date with interval based on new start date.
                         existingReminder.CalculateNextReminder(DateTime.Now);
                     }
 
-                    await documents.AddAsync(existingReminder);
+                    await cosmosWrapper.AddOrUpdateReminder(documentClient, existingReminder);
                     await githubClient.CreateComment(requestObject.HeadCommit.Id,
                         $"Updated reminder '{updatedReminder.Title}' for {existingReminder.NextReminder:D}");
                 }
@@ -201,11 +199,6 @@ namespace Annoy_o_Bot
             }
 
             return results;
-        }
-
-        static string BuildDocumentId(CallbackModel request, string fileName)
-        {
-            return $"{request.Installation.Id}-{request.Repository.Id}-{fileName.Split('/').Last()}";
         }
 
         async Task DeleteRemovedReminders(ICollection<string> deletedFiles, IDocumentClient documentClient, ILogger log, CallbackModel requestObject, IGitHubAppInstallation client)

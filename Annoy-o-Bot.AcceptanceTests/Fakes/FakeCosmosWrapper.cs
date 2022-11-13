@@ -35,4 +35,9 @@ public class FakeCosmosWrapper : ICosmosClientWrapper
 
         return Task.CompletedTask;
     }
+
+    public Task AddOrUpdateReminder(IDocumentClient documentClient, ReminderDocument reminderDocument)
+    {
+        return Task.CompletedTask;
+    }
 }

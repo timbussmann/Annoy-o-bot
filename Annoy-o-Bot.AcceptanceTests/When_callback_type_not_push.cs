@@ -1,11 +1,12 @@
 ﻿using Annoy_o_Bot.AcceptanceTests.Fakes;
+using Annoy_o_Bot.CosmosDB;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace Annoy_o_Bot.AcceptanceTests;
 
-//TOOD: Contract test for X-GitHub-Event
+//TODO: Contract test for X-GitHub-Event
 
 public class When_callback_type_not_push : CallbackHandlerTest
 {
@@ -18,14 +19,15 @@ public class When_callback_type_not_push : CallbackHandlerTest
 
         var appInstallation = new FakeGithubInstallation();
 
-        FakeReminderCollection documents = new FakeReminderCollection();
-        var handler = new CallbackHandler(appInstallation, configurationBuilder.Build(), null!);
-        var result = await handler.Run(request, documents, null!, NullLogger.Instance);
+        var handler = new CallbackHandler(appInstallation, configurationBuilder.Build(), new CosmosClientWrapper());
+        var result = await handler.Run(request, documentClient, NullLogger.Instance);
 
         Assert.IsType<OkResult>(result);
 
         Assert.False(appInstallation.Initialized);
+    }
 
-        Assert.Empty(documents.AddedDocuments);
+    public When_callback_type_not_push(CosmosFixture cosmosFixture) : base(cosmosFixture)
+    {
     }
 }

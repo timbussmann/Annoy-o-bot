@@ -8,4 +8,5 @@ public interface ICosmosClientWrapper
 {
     Task<ReminderDocument?> LoadReminder(IDocumentClient cosmosClient, string fileName, long installationId, long repositoryId);
     Task Delete(IDocumentClient cosmosClient, string fileName, long installationId, long repositoryId);
+    Task AddOrUpdateReminder(IDocumentClient documentClient, ReminderDocument reminderDocument);
 }

@@ -2,24 +2,31 @@
 using System.Text;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Internal;
+using Microsoft.Azure.Documents.Client;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
+using Xunit;
 
 namespace Annoy_o_Bot.AcceptanceTests;
 
+[Collection("CosmosDB")]
 public class CallbackHandlerTest
 {
     protected const string SignatureKey = "mysecretkey";
 
     protected ConfigurationBuilder configurationBuilder;
 
-    public CallbackHandlerTest()
+    protected DocumentClient documentClient;
+
+    public CallbackHandlerTest(CosmosFixture cosmosFixture)
     {
         configurationBuilder = new ConfigurationBuilder();
         configurationBuilder.AddInMemoryCollection(new Dictionary<string, string>
         {
             { "WebhookSecret", SignatureKey }
         });
+
+        documentClient = cosmosFixture.DocumentClient;
     }
 
     protected static HttpRequest CreateGitHubCallbackRequest(CallbackModel callback)
