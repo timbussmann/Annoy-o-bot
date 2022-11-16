@@ -18,7 +18,7 @@ namespace Annoy_o_Bot
             [CosmosDB(CosmosClientWrapper.dbName,
                 CosmosClientWrapper.collectionId,
                 ConnectionStringSetting = "CosmosDBConnection",
-                SqlQuery = "SELECT TOP 50 * FROM c WHERE GetCurrentDateTime() >= c.NextReminder ORDER BY c.NextReminder ASC")]
+                SqlQuery = CosmosClientWrapper.ReminderQuery)]
             IEnumerable<ReminderDocument> dueReminders,
             [CosmosDB(CosmosClientWrapper.dbName,
                 CosmosClientWrapper.collectionId,

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -7,10 +8,14 @@ using Microsoft.Azure.Documents.Client;
 
 namespace Annoy_o_Bot.CosmosDB;
 
+//TODO: no longer requires DI, take client ref in ctor
+
 public class CosmosClientWrapper : ICosmosClientWrapper
 {
     public const string dbName = "annoydb";
     public const string collectionId = "reminders";
+
+    public const string ReminderQuery = "SELECT TOP 50 * FROM c WHERE GetCurrentDateTime() >= c.NextReminder ORDER BY c.NextReminder ASC";
 
     public async Task<ReminderDocument?> LoadReminder(IDocumentClient cosmosClient, string fileName, long installationId,
         long repositoryId)
@@ -23,7 +28,10 @@ public class CosmosClientWrapper : ICosmosClientWrapper
         {
             var existingReminder = await cosmosClient.ReadDocumentAsync<ReminderDocument>(
                 documentUri,
-                new RequestOptions { PartitionKey = new PartitionKey(documentId),  });
+                new RequestOptions
+                {
+                    PartitionKey = new PartitionKey(documentId)
+                });
             return existingReminder.Document;
         }
         catch (DocumentClientException e)
@@ -50,13 +58,23 @@ public class CosmosClientWrapper : ICosmosClientWrapper
         var collectionUri = UriFactory.CreateDocumentCollectionUri(dbName, collectionId);
         try
         {
-            await documentClient.UpsertDocumentAsync(collectionUri, reminderDocument);
+            await documentClient.UpsertDocumentAsync(collectionUri, reminderDocument, new RequestOptions() {});
         }
         catch (Exception e)
         {
             Console.WriteLine(e);
             throw;
         }
+    }
+
+    public Task<IEnumerable<ReminderDocument>> GetDueReminders(IDocumentClient documentClient)
+    {
+        var documentCollectionUri = UriFactory.CreateDocumentCollectionUri(dbName, collectionId);
+        var result = documentClient.CreateDocumentQuery<ReminderDocument>(
+            documentCollectionUri,
+            ReminderQuery,
+            new FeedOptions {EnableCrossPartitionQuery = true});
+        return Task.FromResult<IEnumerable<ReminderDocument>>(result);
     }
 
     static string BuildDocumentId(string fileName, long installationId, long repositoryId)
