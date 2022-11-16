@@ -7,14 +7,14 @@ using Xunit;
 
 namespace Annoy_o_Bot.AcceptanceTests;
 
-public class When_updating_reminder_on_default_branch : CallbackHandlerTest
+public class When_updating_reminder_on_default_branch : AcceptanceTest
 {
     [Fact]
     public async Task Should_update_reminder_in_database()
     {
         var appInstallation = new FakeGithubInstallation();
         var cosmosDB = new CosmosClientWrapper();
-        var handler = new CallbackHandler(appInstallation, configurationBuilder.Build(), cosmosDB);
+        var handler = new CallbackHandler(appInstallation, configurationBuilder.Build());
 
         // Create reminder:
         var createCommit = new CallbackModel.CommitModel
@@ -70,7 +70,7 @@ public class When_updating_reminder_on_default_branch : CallbackHandlerTest
         var comment = Assert.Single(appInstallation.Comments.Where(c => c.commitId == updateCommit.Id));
         Assert.Contains($"Updated reminder '{updatedReminder.Title}'", comment.comment);
 
-        await CreateDueReminders(cosmosDB, appInstallation);
+        await CreateDueReminders(appInstallation);
         var issue = Assert.Single(appInstallation.Issues);
         Assert.Equal(updatedReminder.Title, issue.Title);
     }

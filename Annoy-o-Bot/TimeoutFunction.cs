@@ -16,9 +16,9 @@ namespace Annoy_o_Bot
         private ICosmosClientWrapper cosmosWrapper;
         private Func<long, long, IGitHubAppInstallation> installationClientFactory;
 
-        public TimeoutFunction(ICosmosClientWrapper cosmosWrapper, Func<long, long, IGitHubAppInstallation> installationClientFactory)
+        public TimeoutFunction(Func<long, long, IGitHubAppInstallation> installationClientFactory)
         {
-            this.cosmosWrapper = cosmosWrapper;
+            this.cosmosWrapper = new CosmosClientWrapper();
             this.installationClientFactory = installationClientFactory;
         }
 

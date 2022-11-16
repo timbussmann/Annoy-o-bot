@@ -60,11 +60,17 @@ public class AcceptanceTest
             });
     }
 
-    protected async Task CreateDueReminders(CosmosClientWrapper cosmosWrapper, IGitHubAppInstallation appInstallation)
+    protected async Task CreateDueReminders(IGitHubAppInstallation appInstallation)
     {
-        var timeoutHandler = new TimeoutFunction(cosmosWrapper, (installationId, repositoryId) => appInstallation);
-        var reminderDocuments = await cosmosWrapper.GetDueReminders(documentClient);
-        await timeoutHandler.Run(null, reminderDocuments, documentClient, NullLogger.Instance);
+        var timeoutHandler = new TimeoutFunction((installationId, repositoryId) => appInstallation);
+
+        var documentCollectionUri = UriFactory.CreateDocumentCollectionUri(CosmosClientWrapper.dbName, CosmosClientWrapper.collectionId);
+        var result = documentClient.CreateDocumentQuery<ReminderDocument>(
+            documentCollectionUri,
+            CosmosClientWrapper.ReminderQuery,
+            new FeedOptions { EnableCrossPartitionQuery = true });
+
+        await timeoutHandler.Run(null!, result, documentClient, NullLogger.Instance);
     }
 
     protected static HttpRequest CreateGitHubCallbackRequest(CallbackModel callback)

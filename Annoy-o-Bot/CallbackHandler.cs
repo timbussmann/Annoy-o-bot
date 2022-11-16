@@ -23,11 +23,11 @@ namespace Annoy_o_Bot
         private IConfiguration configuration;
         private ICosmosClientWrapper cosmosWrapper;
 
-        public CallbackHandler(IGitHubAppInstallation githubClient, IConfiguration configuration, ICosmosClientWrapper cosmosWrapper)
+        public CallbackHandler(IGitHubAppInstallation githubClient, IConfiguration configuration)
         {
             this.githubClient = githubClient;
             this.configuration = configuration;
-            this.cosmosWrapper = cosmosWrapper;
+            this.cosmosWrapper = new CosmosClientWrapper();
         }
 
         [FunctionName("Callback")]

@@ -67,16 +67,6 @@ public class CosmosClientWrapper : ICosmosClientWrapper
         }
     }
 
-    public Task<IEnumerable<ReminderDocument>> GetDueReminders(IDocumentClient documentClient)
-    {
-        var documentCollectionUri = UriFactory.CreateDocumentCollectionUri(dbName, collectionId);
-        var result = documentClient.CreateDocumentQuery<ReminderDocument>(
-            documentCollectionUri,
-            ReminderQuery,
-            new FeedOptions {EnableCrossPartitionQuery = true});
-        return Task.FromResult<IEnumerable<ReminderDocument>>(result);
-    }
-
     static string BuildDocumentId(string fileName, long installationId, long repositoryId)
     {
         return $"{installationId}-{repositoryId}-{fileName.Split('/').Last()}";

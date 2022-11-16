@@ -10,7 +10,7 @@ namespace Annoy_o_Bot.AcceptanceTests;
 //TODO Tests for different reminder config options (assignee, labels, ...)
 //TODO Tests for different interval configurations
 
-public class When_adding_new_reminder_on_default_branch : CallbackHandlerTest
+public class When_adding_new_reminder_on_default_branch : AcceptanceTest
 {
     [Fact]
     public async Task Should_create_reminder_when_due()
@@ -38,7 +38,7 @@ public class When_adding_new_reminder_on_default_branch : CallbackHandlerTest
 
         var cosmosWrapper = new CosmosClientWrapper();
 
-        var handler = new CallbackHandler(appInstallation, configurationBuilder.Build(), cosmosWrapper);
+        var handler = new CallbackHandler(appInstallation, configurationBuilder.Build());
         var result = await handler.Run(request, documentClient, NullLogger.Instance);
 
         Assert.IsType<OkResult>(result);
@@ -46,7 +46,7 @@ public class When_adding_new_reminder_on_default_branch : CallbackHandlerTest
         Assert.Equal(callback.Installation.Id, appInstallation.InstallationId);
         Assert.Equal(callback.Repository.Id, appInstallation.RepositoryId);
 
-        await CreateDueReminders(cosmosWrapper, appInstallation);
+        await CreateDueReminders(appInstallation);
 
         var issue = Assert.Single(appInstallation.Issues);
         Assert.Equal(reminder.Title, issue.Title);

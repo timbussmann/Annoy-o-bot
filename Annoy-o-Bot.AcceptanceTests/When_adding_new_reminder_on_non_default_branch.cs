@@ -9,7 +9,7 @@ using Xunit;
 
 namespace Annoy_o_Bot.AcceptanceTests;
 
-public class When_adding_new_reminder_on_non_default_branch : CallbackHandlerTest
+public class When_adding_new_reminder_on_non_default_branch : AcceptanceTest
 {
     [Fact]
     public async Task Should_only_create_successful_check_run_for_valid_reminder_definition()
@@ -35,8 +35,7 @@ public class When_adding_new_reminder_on_non_default_branch : CallbackHandlerTes
         var appInstallation = new FakeGithubInstallation();
         appInstallation.AddFileContent(callback.Commits[0].Added[0], JsonSerializer.Serialize(reminder));
 
-        var cosmosWrapper = new CosmosClientWrapper();
-        var handler = new CallbackHandler(appInstallation, configurationBuilder.Build(), cosmosWrapper);
+        var handler = new CallbackHandler(appInstallation, configurationBuilder.Build());
 
         var result = await handler.Run(request, documentClient, NullLogger.Instance);
 
@@ -53,7 +52,7 @@ public class When_adding_new_reminder_on_non_default_branch : CallbackHandlerTes
         Assert.Equal(CheckStatus.Completed, checkRun.Status);
         Assert.Equal(CheckConclusion.Success, checkRun.Conclusion);
 
-        await CreateDueReminders(cosmosWrapper, appInstallation);
+        await CreateDueReminders(appInstallation);
 
         Assert.Empty(appInstallation.Issues);
     }
@@ -76,8 +75,7 @@ public class When_adding_new_reminder_on_non_default_branch : CallbackHandlerTes
         var appInstallation = new FakeGithubInstallation();
         appInstallation.AddFileContent(callback.Commits[0].Added[0], "Invalid reminder definition");
 
-        var cosmosWrapper = new CosmosClientWrapper();
-        var handler = new CallbackHandler(appInstallation, configurationBuilder.Build(), cosmosWrapper);
+        var handler = new CallbackHandler(appInstallation, configurationBuilder.Build());
 
         await Assert.ThrowsAnyAsync<Exception>(() => handler.Run(request, documentClient, NullLogger.Instance));
 
@@ -93,7 +91,7 @@ public class When_adding_new_reminder_on_non_default_branch : CallbackHandlerTes
         Assert.Equal(CheckConclusion.Failure, checkRun.Conclusion);
         Assert.Contains("Invalid reminder definition", checkRun.Output.Title);
 
-        await CreateDueReminders(cosmosWrapper, appInstallation);
+        await CreateDueReminders(appInstallation);
 
         Assert.Empty(appInstallation.Issues);
     }

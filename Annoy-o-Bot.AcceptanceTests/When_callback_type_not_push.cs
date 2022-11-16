@@ -8,7 +8,7 @@ namespace Annoy_o_Bot.AcceptanceTests;
 
 //TODO: Contract test for X-GitHub-Event
 
-public class When_callback_type_not_push : CallbackHandlerTest
+public class When_callback_type_not_push : AcceptanceTest
 {
     [Fact]
     public async Task Should_ignore_request()
@@ -19,7 +19,7 @@ public class When_callback_type_not_push : CallbackHandlerTest
 
         var appInstallation = new FakeGithubInstallation();
 
-        var handler = new CallbackHandler(appInstallation, configurationBuilder.Build(), new CosmosClientWrapper());
+        var handler = new CallbackHandler(appInstallation, configurationBuilder.Build());
         var result = await handler.Run(request, documentClient, NullLogger.Instance);
 
         Assert.IsType<OkResult>(result);

@@ -51,10 +51,9 @@ public class CosmosWrapperTests : IClassFixture<CosmosFixture>
     }
 
     [Fact]
-    public async Task GetDueReminders_should_return_empty_collection_when_no_reminders()
+    public void GetDueReminders_should_return_empty_collection_when_no_reminders()
     {
-        var wrapper = new CosmosClientWrapper();
-        var result = await wrapper.GetDueReminders(DocumentClient);
+        var result = ExecuteReminderQuery();
 
         Assert.Empty(result);
     }
@@ -70,7 +69,8 @@ public class CosmosWrapperTests : IClassFixture<CosmosFixture>
             RepositoryId = Random.Shared.NextInt64(),
             Path = "file/path.txt"
         });
-        var result = await wrapper.GetDueReminders(DocumentClient);
+
+        var result = ExecuteReminderQuery();
 
         Assert.Empty(result);
     }
@@ -86,7 +86,8 @@ public class CosmosWrapperTests : IClassFixture<CosmosFixture>
             RepositoryId = Random.Shared.NextInt64(),
             Path = "file/path.txt"
         });
-        var result = await wrapper.GetDueReminders(DocumentClient);
+
+        var result = ExecuteReminderQuery();
 
         Assert.Empty(result);
     }
@@ -103,8 +104,20 @@ public class CosmosWrapperTests : IClassFixture<CosmosFixture>
             Path = "file/path.txt"
         };
         await wrapper.AddOrUpdateReminder(DocumentClient, existingReminder);
-        var result = await wrapper.GetDueReminders(DocumentClient);
+
+        var result = ExecuteReminderQuery();
 
         Assert.Equivalent(existingReminder, result.Single());
+    }
+
+    private IQueryable<ReminderDocument> ExecuteReminderQuery()
+    {
+        var documentCollectionUri =
+            UriFactory.CreateDocumentCollectionUri(CosmosClientWrapper.dbName, CosmosClientWrapper.collectionId);
+        var result = DocumentClient.CreateDocumentQuery<ReminderDocument>(
+            documentCollectionUri,
+            CosmosClientWrapper.ReminderQuery,
+            new FeedOptions { EnableCrossPartitionQuery = true });
+        return result;
     }
 }

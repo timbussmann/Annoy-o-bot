@@ -7,14 +7,14 @@ using Xunit;
 
 namespace Annoy_o_Bot.AcceptanceTests;
 
-public class When_deleting_reminder_on_default_branch : CallbackHandlerTest
+public class When_deleting_reminder_on_default_branch : AcceptanceTest
 {
     [Fact]
     public async Task Should_delete_reminder_in_database()
     {
         var appInstallation = new FakeGithubInstallation();
         var cosmosDB = new CosmosClientWrapper();
-        var handler = new CallbackHandler(appInstallation, configurationBuilder.Build(), cosmosDB);
+        var handler = new CallbackHandler(appInstallation, configurationBuilder.Build());
 
         // Create reminder:
         var createCommit = new CallbackModel.CommitModel
@@ -64,7 +64,7 @@ public class When_deleting_reminder_on_default_branch : CallbackHandlerTest
         var comment = Assert.Single(comments);
         Assert.Contains($"Deleted reminder '{deleteCommit.Removed[0]}'", comment.comment);
 
-        await CreateDueReminders(cosmosDB, appInstallation);
+        await CreateDueReminders(appInstallation);
         Assert.Empty(appInstallation.Issues);
     }
 

@@ -6,7 +6,7 @@ namespace Annoy_o_Bot.AcceptanceTests;
 
 //TODO: Contract test for X-Hub-Signature-256
 
-public class When_request_signature_does_not_match : CallbackHandlerTest
+public class When_request_signature_does_not_match : AcceptanceTest
 {
     [Fact]
     public async Task Should_return_error()
@@ -17,7 +17,7 @@ public class When_request_signature_does_not_match : CallbackHandlerTest
         request.Headers["X-Hub-Signature-256"] = "1234567890"; // this is not the incorrect but the expected signature in this test
 
         var appInstallation = new FakeGithubInstallation();
-        var handler = new CallbackHandler(appInstallation, configurationBuilder.Build(), null!);
+        var handler = new CallbackHandler(appInstallation, configurationBuilder.Build());
 
         var exception = await Assert.ThrowsAnyAsync<Exception>(() => handler.Run(request, documentClient, NullLogger.Instance));
 
