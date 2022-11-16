@@ -37,4 +37,9 @@ public class GitHubAppInstallation : IGitHubAppInstallation
             commitId,
             new NewCommitComment(comment));
     }
+
+    public Task<Issue> CreateIssue(NewIssue issue)
+    {
+        return installationClient.Issue.Create(repositoryId, issue);
+    }
 }

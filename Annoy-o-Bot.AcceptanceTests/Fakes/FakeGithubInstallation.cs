@@ -14,6 +14,8 @@ class FakeGithubInstallation : IGitHubAppInstallation
     public List<(string commitId, string comment)> Comments { get; set; } = new();
 
     public List<NewCheckRun> CheckRuns { get; set; } = new();
+
+    public List<NewIssue> Issues { get; set; } = new();
     
     private readonly Dictionary<string, string> files = new();
     
@@ -27,7 +29,7 @@ class FakeGithubInstallation : IGitHubAppInstallation
 
     public void AddFileContent(string filePath, string content)
     {
-        files.Add(filePath, content);
+        files[filePath] = content;
     }
 
     //TODO test behavior when file does not exist
@@ -46,5 +48,11 @@ class FakeGithubInstallation : IGitHubAppInstallation
     {
         Comments.Add((commitId, comment));
         return Task.CompletedTask;
+    }
+
+    public Task<Issue> CreateIssue(NewIssue issue)
+    {
+        Issues.Add(issue);
+        return Task.FromResult(new Issue());
     }
 }

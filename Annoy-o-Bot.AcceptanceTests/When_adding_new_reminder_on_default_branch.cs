@@ -7,10 +7,13 @@ using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Annoy_o_Bot.AcceptanceTests;
 
+//TODO Tests for different reminder config options (assignee, labels, ...)
+//TODO Tests for different interval configurations
+
 public class When_adding_new_reminder_on_default_branch : CallbackHandlerTest
 {
     [Fact]
-    public async Task Should_store_reminder_in_database()
+    public async Task Should_create_reminder_when_due()
     {
         var commit = new CallbackModel.CommitModel
         {
@@ -27,7 +30,7 @@ public class When_adding_new_reminder_on_default_branch : CallbackHandlerTest
         var reminder = new Reminder
         {
             Title = "Some title for the new reminder",
-            Date = DateTime.UtcNow.AddDays(10),
+            Date = DateTime.UtcNow.AddDays(-1),
             Interval = Interval.Weekly
         };
         var appInstallation = new FakeGithubInstallation();
@@ -43,15 +46,11 @@ public class When_adding_new_reminder_on_default_branch : CallbackHandlerTest
         Assert.Equal(callback.Installation.Id, appInstallation.InstallationId);
         Assert.Equal(callback.Repository.Id, appInstallation.RepositoryId);
 
-        var addedReminder = await cosmosWrapper.LoadReminder(documentClient, commit.Added[0], callback.Installation.Id,
-            callback.Repository.Id);
-        Assert.NotNull(addedReminder);
-        Assert.Equal(callback.Installation.Id, addedReminder.InstallationId);
-        Assert.Equal(callback.Repository.Id, addedReminder.RepositoryId);
-        Assert.Equal(callback.Commits[0].Added[0], addedReminder.Path);
-        Assert.Equal(DateTime.MinValue, addedReminder.LastReminder);
-        Assert.Equal(reminder.Date, addedReminder.NextReminder);
-        Assert.Equivalent(reminder, addedReminder.Reminder);
+        await CreateDueReminders(cosmosWrapper, appInstallation);
+
+        var issue = Assert.Single(appInstallation.Issues);
+        Assert.Equal(reminder.Title, issue.Title);
+        Assert.Equal(reminder.Message, issue.Body);
 
         var comments = Assert.Single(appInstallation.Comments.GroupBy(c => c.commitId));
         Assert.Equal(commit.Id, comments.Key);

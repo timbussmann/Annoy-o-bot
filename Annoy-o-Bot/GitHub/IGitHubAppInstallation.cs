@@ -10,5 +10,8 @@ public interface IGitHubAppInstallation
     Task<string> ReadFileContent(string filePath, string branchReference);
 
     Task CreateCheckRun(NewCheckRun checkRun);
+
     Task CreateComment(string commitId, string comment);
+
+    Task<Issue> CreateIssue(NewIssue issue);
 }

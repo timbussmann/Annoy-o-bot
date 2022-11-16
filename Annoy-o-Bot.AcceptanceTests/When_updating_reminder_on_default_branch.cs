@@ -12,7 +12,34 @@ public class When_updating_reminder_on_default_branch : CallbackHandlerTest
     [Fact]
     public async Task Should_update_reminder_in_database()
     {
-        var commit = new CallbackModel.CommitModel
+        var appInstallation = new FakeGithubInstallation();
+        var cosmosDB = new CosmosClientWrapper();
+        var handler = new CallbackHandler(appInstallation, configurationBuilder.Build(), cosmosDB);
+
+        // Create reminder:
+        var createCommit = new CallbackModel.CommitModel
+        {
+            Id = Guid.NewGuid().ToString(),
+            Added = new[]
+            {
+                ".reminders/test.json"
+            }
+        };
+        var createCallback = CreateGitHubCallbackModel(commits: createCommit);
+        var createRequest = CreateGitHubCallbackRequest(createCallback);
+
+        var initialReminder = new Reminder
+        {
+            Title = "Some title for the reminder",
+            Date = DateTime.UtcNow.AddYears(5),
+            Interval = Interval.Weekly
+        };
+        appInstallation.AddFileContent(createCallback.Commits[0].Added[0], JsonSerializer.Serialize(initialReminder));
+
+        await handler.Run(createRequest, documentClient, NullLogger.Instance);
+
+        // Update reminder:
+        var updateCommit = new CallbackModel.CommitModel
         {
             Id = Guid.NewGuid().ToString(),
             Modified = new[]
@@ -20,52 +47,32 @@ public class When_updating_reminder_on_default_branch : CallbackHandlerTest
                 ".reminders/test.json"
             }
         };
-        var callback = CreateGitHubCallbackModel(commits: commit);
-        var request = CreateGitHubCallbackRequest(callback);
+        var updateCallback = CreateGitHubCallbackModel(commits: updateCommit);
+        updateCallback.Installation.Id = createCallback.Installation.Id;
+        updateCallback.Repository.Id = createCallback.Repository.Id;
+        var updateRequest = CreateGitHubCallbackRequest(updateCallback);
 
-        var reminder = new Reminder
+        var updatedReminder = new Reminder
         {
-            Title = "Some title for the reminder",
-            Date = DateTime.UtcNow.AddDays(10),
+            Title = "Updated title for the reminder",
+            Date = DateTime.UtcNow.AddDays(-1),
             Interval = Interval.Weekly
         };
-        var appInstallation = new FakeGithubInstallation();
-        appInstallation.AddFileContent(callback.Commits[0].Modified[0], JsonSerializer.Serialize(reminder));
+        appInstallation.AddFileContent(createCallback.Commits[0].Added[0], JsonSerializer.Serialize(updatedReminder));
 
-        var cosmosDB = new CosmosClientWrapper();
-        var storedReminder = new ReminderDocument
-        {
-            InstallationId = callback.Installation.Id,
-            RepositoryId = callback.Repository.Id,
-            Path = commit.Modified[0],
-            LastReminder = DateTime.UtcNow.AddYears(-5),
-            NextReminder = DateTime.UtcNow.AddYears(5),
-        };
-        await cosmosDB.AddOrUpdateReminder(documentClient, storedReminder);
-
-        var handler = new CallbackHandler(appInstallation, configurationBuilder.Build(), cosmosDB);
-        var result = await handler.Run(request, documentClient, NullLogger.Instance);
+        var result = await handler.Run(updateRequest, documentClient, NullLogger.Instance);
 
         Assert.IsType<OkResult>(result);
 
-        Assert.Equal(callback.Installation.Id, appInstallation.InstallationId);
-        Assert.Equal(callback.Repository.Id, appInstallation.RepositoryId);
+        Assert.Equal(updateCallback.Installation.Id, appInstallation.InstallationId);
+        Assert.Equal(updateCallback.Repository.Id, appInstallation.RepositoryId);
+        
+        var comment = Assert.Single(appInstallation.Comments.Where(c => c.commitId == updateCommit.Id));
+        Assert.Contains($"Updated reminder '{updatedReminder.Title}'", comment.comment);
 
-        var updatedReminder = await cosmosDB.LoadReminder(documentClient, commit.Modified[0], callback.Installation.Id,
-            callback.Repository.Id);
-        // Should not update certain properties
-        Assert.Equal(storedReminder.InstallationId, updatedReminder!.InstallationId);
-        Assert.Equal(storedReminder.RepositoryId, updatedReminder.RepositoryId);
-        Assert.Equal(storedReminder.Path, updatedReminder.Path);
-        Assert.Equal(storedReminder.LastReminder, updatedReminder.LastReminder);
-        // Should update next reminder date and reminder data based on incoming request
-        Assert.Equal(reminder.Date, updatedReminder.NextReminder);
-        Assert.Equivalent(reminder, updatedReminder.Reminder);
-
-        var comments = Assert.Single(appInstallation.Comments.GroupBy(c => c.commitId));
-        Assert.Equal(commit.Id, comments.Key);
-        var comment = Assert.Single(comments);
-        Assert.Contains($"Updated reminder '{reminder.Title}'", comment.comment);
+        await CreateDueReminders(cosmosDB, appInstallation);
+        var issue = Assert.Single(appInstallation.Issues);
+        Assert.Equal(updatedReminder.Title, issue.Title);
     }
 
     public When_updating_reminder_on_default_branch(CosmosFixture cosmosFixture) : base(cosmosFixture)

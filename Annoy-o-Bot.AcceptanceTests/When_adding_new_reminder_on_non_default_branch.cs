@@ -29,7 +29,7 @@ public class When_adding_new_reminder_on_non_default_branch : CallbackHandlerTes
         var reminder = new Reminder
         {
             Title = "Some title for the new reminder",
-            Date = DateTime.UtcNow.AddDays(10),
+            Date = DateTime.UtcNow.AddDays(-1),
             Interval = Interval.Weekly
         };
         var appInstallation = new FakeGithubInstallation();
@@ -42,8 +42,6 @@ public class When_adding_new_reminder_on_non_default_branch : CallbackHandlerTes
 
         Assert.IsType<OkResult>(result);
 
-        Assert.Null(await cosmosWrapper.LoadReminder(documentClient, commit.Added[0], callback.Installation.Id, callback.Repository.Id));
-
         Assert.Equal(callback.Installation.Id, appInstallation.InstallationId);
         Assert.Equal(callback.Repository.Id, appInstallation.RepositoryId);
 
@@ -54,6 +52,10 @@ public class When_adding_new_reminder_on_non_default_branch : CallbackHandlerTes
         Assert.Equal(commit.Id, checkRun.HeadSha);
         Assert.Equal(CheckStatus.Completed, checkRun.Status);
         Assert.Equal(CheckConclusion.Success, checkRun.Conclusion);
+
+        await CreateDueReminders(cosmosWrapper, appInstallation);
+
+        Assert.Empty(appInstallation.Issues);
     }
 
     [Fact]
@@ -79,8 +81,6 @@ public class When_adding_new_reminder_on_non_default_branch : CallbackHandlerTes
 
         await Assert.ThrowsAnyAsync<Exception>(() => handler.Run(request, documentClient, NullLogger.Instance));
 
-        Assert.Null(await cosmosWrapper.LoadReminder(documentClient, commit.Added[0], callback.Installation.Id, callback.Repository.Id));
-
         Assert.Equal(callback.Installation.Id, appInstallation.InstallationId);
         Assert.Equal(callback.Repository.Id, appInstallation.RepositoryId);
 
@@ -92,6 +92,10 @@ public class When_adding_new_reminder_on_non_default_branch : CallbackHandlerTes
         Assert.Equal(CheckStatus.Completed, checkRun.Status);
         Assert.Equal(CheckConclusion.Failure, checkRun.Conclusion);
         Assert.Contains("Invalid reminder definition", checkRun.Output.Title);
+
+        await CreateDueReminders(cosmosWrapper, appInstallation);
+
+        Assert.Empty(appInstallation.Issues);
     }
 
     public When_adding_new_reminder_on_non_default_branch(CosmosFixture cosmosFixture) : base(cosmosFixture)
