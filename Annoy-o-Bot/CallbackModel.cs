@@ -1,5 +1,6 @@
 #nullable disable
 
+using System;
 using Newtonsoft.Json;
 
 namespace Annoy_o_Bot
@@ -18,9 +19,9 @@ namespace Annoy_o_Bot
         {
             public string Id { get; set; }
             public string Message { get; set; }
-            public string[] Added { get; set; } = new string[0];
-            public string[] Modified { get; set; } = new string[0];
-            public string[] Removed { get; set; } = new string[0];
+            public string[] Added { get; set; } = Array.Empty<string>();
+            public string[] Modified { get; set; } = Array.Empty<string>();
+            public string[] Removed { get; set; } = Array.Empty<string>();
         }
 
         public class InstallationModel

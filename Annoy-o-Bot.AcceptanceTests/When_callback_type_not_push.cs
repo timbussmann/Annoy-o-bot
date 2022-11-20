@@ -12,8 +12,9 @@ public class When_callback_type_not_push : AcceptanceTest
     [Fact]
     public async Task Should_ignore_request()
     {
-        var callback = CreateGitHubCallbackModel();
-        var request = CreateGitHubCallbackRequest(callback);
+        var repository = FakeGitHubRepository.CreateNew();
+        var callback = repository.Commit(null);
+        var request = CreateCallbackHttpRequest(callback);
         request.Headers["X-GitHub-Event"] = "yolo";
 
         var handler = new CallbackHandler(new FakeGitHubApi(), configurationBuilder.Build());

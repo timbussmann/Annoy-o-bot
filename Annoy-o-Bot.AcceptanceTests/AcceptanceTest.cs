@@ -73,7 +73,7 @@ public class AcceptanceTest
         await timeoutHandler.Run(null!, result, documentClient, NullLogger.Instance);
     }
 
-    protected static HttpRequest CreateGitHubCallbackRequest(CallbackModel callback)
+    protected static HttpRequest CreateCallbackHttpRequest(CallbackModel callback)
     {
         HttpRequest request = new DefaultHttpRequest(new DefaultHttpContext());
         var messageContent = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(callback, Formatting.None));
@@ -84,17 +84,7 @@ public class AcceptanceTest
         return request;
     }
 
-    protected static CallbackModel CreateGitHubCallbackModel(string defaultBranch = "main", string? currentBranch = null, params CallbackModel.CommitModel[] commits)
-    {
-        return new CallbackModel
-        {
-            Installation = new CallbackModel.InstallationModel() { Id = Random.Shared.NextInt64() },
-            Repository = new CallbackModel.RepositoryModel() { Id = Random.Shared.NextInt64(), DefaultBranch = defaultBranch },
-            Ref = $"refs/heads/{currentBranch ?? defaultBranch}",
-            HeadCommit = commits.FirstOrDefault(),
-            Commits = commits
-        };
-    }
+
 
 
 }

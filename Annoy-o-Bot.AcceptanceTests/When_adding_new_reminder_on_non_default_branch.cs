@@ -15,26 +15,15 @@ public class When_adding_new_reminder_on_non_default_branch : AcceptanceTest
     [Fact]
     public async Task Should_only_create_successful_check_run_for_valid_reminder_definition()
     {
-        var commit = new CallbackModel.CommitModel
-        {
-            Id = Guid.NewGuid().ToString(),
-            Added = new[]
-            {
-                ".reminders/test.json"
-            }
-        };
-        var callback = CreateGitHubCallbackModel(commits: commit);
-        callback.Ref = "my-branch";
-        var request = CreateGitHubCallbackRequest(callback);
-
+        var appInstallation = FakeGitHubRepository.CreateNew();
         var reminder = new Reminder
         {
             Title = "Some title for the new reminder",
             Date = DateTime.UtcNow.AddDays(-1),
             Interval = Interval.Weekly
         };
-        var appInstallation = new FakeGitHubRepository(callback.Installation.Id, callback.Repository.Id);
-        appInstallation.AddFileContent(callback.Commits[0].Added[0], JsonSerializer.Serialize(reminder));
+        var callback = appInstallation.CommitNewReminder(reminder, branch: "my-branch");
+        var request = CreateCallbackHttpRequest(callback);
 
         var gitHubApi = new FakeGitHubApi(appInstallation);
         var handler = new CallbackHandler(gitHubApi, configurationBuilder.Build());
@@ -50,7 +39,7 @@ public class When_adding_new_reminder_on_non_default_branch : AcceptanceTest
 
         var checkRun = Assert.Single(appInstallation.CheckRuns);
         Assert.Equal("annoy-o-bot", checkRun.Name);
-        Assert.Equal(commit.Id, checkRun.HeadSha);
+        Assert.Equal(callback.HeadCommit.Id, checkRun.HeadSha);
         Assert.Equal(CheckStatus.Completed, checkRun.Status);
         Assert.Equal(CheckConclusion.Success, checkRun.Conclusion);
 
@@ -62,22 +51,13 @@ public class When_adding_new_reminder_on_non_default_branch : AcceptanceTest
     [Fact]
     public async Task Should_only_create_failed_check_run_for_invalid_reminder_definition()
     {
-        var commit = new CallbackModel.CommitModel
-        {
-            Id = Guid.NewGuid().ToString(),
-            Added = new[]
-            {
-                ".reminders/test.json"
-            }
-        };
-        var callback = CreateGitHubCallbackModel(commits: commit);
-        callback.Ref = "my-branch";
-        var request = CreateGitHubCallbackRequest(callback);
+        var appInstallation = FakeGitHubRepository.CreateNew();
+        var gitHubApi = new FakeGitHubApi(appInstallation);
 
-        var appInstallation = new FakeGitHubRepository(callback.Installation.Id, callback.Repository.Id);
+        var callback = appInstallation.CommitNewReminder(new Reminder(), branch: "my-branch");
+        var request = CreateCallbackHttpRequest(callback);
         appInstallation.AddFileContent(callback.Commits[0].Added[0], "Invalid reminder definition");
 
-        var gitHubApi = new FakeGitHubApi(appInstallation);
         var handler = new CallbackHandler(gitHubApi, configurationBuilder.Build());
 
         await Assert.ThrowsAnyAsync<Exception>(() => handler.Run(request, documentClient, NullLogger.Instance));
@@ -89,7 +69,7 @@ public class When_adding_new_reminder_on_non_default_branch : AcceptanceTest
 
         var checkRun = Assert.Single(appInstallation.CheckRuns);
         Assert.Equal("annoy-o-bot", checkRun.Name);
-        Assert.Equal(commit.Id, checkRun.HeadSha);
+        Assert.Equal(callback.HeadCommit.Id, checkRun.HeadSha);
         Assert.Equal(CheckStatus.Completed, checkRun.Status);
         Assert.Equal(CheckConclusion.Failure, checkRun.Conclusion);
         Assert.Contains("Invalid reminder definition", checkRun.Output.Title);

@@ -11,8 +11,8 @@ public class When_request_signature_does_not_match : AcceptanceTest
     [Fact]
     public async Task Should_return_error()
     {
-        var callback = CreateGitHubCallbackModel();
-        var request = CreateGitHubCallbackRequest(callback);
+        var repository = FakeGitHubRepository.CreateNew();
+        var request = CreateCallbackHttpRequest(repository.Commit(CallbackModelHelper.CreateCommitModel()));
         var requestHash = request.Headers["X-Hub-Signature-256"];
         request.Headers["X-Hub-Signature-256"] = "1234567890"; // this is not the incorrect but the expected signature in this test
 
