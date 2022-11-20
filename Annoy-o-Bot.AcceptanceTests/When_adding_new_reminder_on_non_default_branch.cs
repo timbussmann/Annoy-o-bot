@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using Annoy_o_Bot.AcceptanceTests.Fakes;
 using Annoy_o_Bot.CosmosDB;
+using Annoy_o_Bot.GitHub;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Documents.Client;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -32,10 +33,11 @@ public class When_adding_new_reminder_on_non_default_branch : AcceptanceTest
             Date = DateTime.UtcNow.AddDays(-1),
             Interval = Interval.Weekly
         };
-        var appInstallation = new FakeGithubInstallation();
+        var appInstallation = new FakeGitHubRepository(callback.Installation.Id, callback.Repository.Id);
         appInstallation.AddFileContent(callback.Commits[0].Added[0], JsonSerializer.Serialize(reminder));
 
-        var handler = new CallbackHandler(appInstallation, configurationBuilder.Build());
+        var gitHubApi = new FakeGitHubApi(appInstallation);
+        var handler = new CallbackHandler(gitHubApi, configurationBuilder.Build());
 
         var result = await handler.Run(request, documentClient, NullLogger.Instance);
 
@@ -52,7 +54,7 @@ public class When_adding_new_reminder_on_non_default_branch : AcceptanceTest
         Assert.Equal(CheckStatus.Completed, checkRun.Status);
         Assert.Equal(CheckConclusion.Success, checkRun.Conclusion);
 
-        await CreateDueReminders(appInstallation);
+        await CreateDueReminders(gitHubApi);
 
         Assert.Empty(appInstallation.Issues);
     }
@@ -72,10 +74,11 @@ public class When_adding_new_reminder_on_non_default_branch : AcceptanceTest
         callback.Ref = "my-branch";
         var request = CreateGitHubCallbackRequest(callback);
 
-        var appInstallation = new FakeGithubInstallation();
+        var appInstallation = new FakeGitHubRepository(callback.Installation.Id, callback.Repository.Id);
         appInstallation.AddFileContent(callback.Commits[0].Added[0], "Invalid reminder definition");
 
-        var handler = new CallbackHandler(appInstallation, configurationBuilder.Build());
+        var gitHubApi = new FakeGitHubApi(appInstallation);
+        var handler = new CallbackHandler(gitHubApi, configurationBuilder.Build());
 
         await Assert.ThrowsAnyAsync<Exception>(() => handler.Run(request, documentClient, NullLogger.Instance));
 
@@ -91,7 +94,7 @@ public class When_adding_new_reminder_on_non_default_branch : AcceptanceTest
         Assert.Equal(CheckConclusion.Failure, checkRun.Conclusion);
         Assert.Contains("Invalid reminder definition", checkRun.Output.Title);
 
-        await CreateDueReminders(appInstallation);
+        await CreateDueReminders(gitHubApi);
 
         Assert.Empty(appInstallation.Issues);
     }

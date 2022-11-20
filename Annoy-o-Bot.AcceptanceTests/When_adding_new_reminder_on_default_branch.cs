@@ -1,5 +1,4 @@
 ﻿using Annoy_o_Bot.AcceptanceTests.Fakes;
-using Annoy_o_Bot.CosmosDB;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
@@ -33,12 +32,11 @@ public class When_adding_new_reminder_on_default_branch : AcceptanceTest
             Date = DateTime.UtcNow.AddDays(-1),
             Interval = Interval.Weekly
         };
-        var appInstallation = new FakeGithubInstallation();
+        var appInstallation = new FakeGitHubRepository(callback.Installation.Id, callback.Repository.Id);
         appInstallation.AddFileContent(callback.Commits[0].Added[0], JsonSerializer.Serialize(reminder));
 
-        var cosmosWrapper = new CosmosClientWrapper();
-
-        var handler = new CallbackHandler(appInstallation, configurationBuilder.Build());
+        var gitHubApi = new FakeGitHubApi(appInstallation);
+        var handler = new CallbackHandler(gitHubApi, configurationBuilder.Build());
         var result = await handler.Run(request, documentClient, NullLogger.Instance);
 
         Assert.IsType<OkResult>(result);
@@ -46,7 +44,7 @@ public class When_adding_new_reminder_on_default_branch : AcceptanceTest
         Assert.Equal(callback.Installation.Id, appInstallation.InstallationId);
         Assert.Equal(callback.Repository.Id, appInstallation.RepositoryId);
 
-        await CreateDueReminders(appInstallation);
+        await CreateDueReminders(gitHubApi);
 
         var issue = Assert.Single(appInstallation.Issues);
         Assert.Equal(reminder.Title, issue.Title);

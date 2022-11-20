@@ -60,9 +60,9 @@ public class AcceptanceTest
             });
     }
 
-    protected async Task CreateDueReminders(IGitHubAppInstallation appInstallation)
+    protected async Task CreateDueReminders(IGitHubApi gitHubApi)
     {
-        var timeoutHandler = new TimeoutFunction((installationId, repositoryId) => appInstallation);
+        var timeoutHandler = new TimeoutFunction(gitHubApi);
 
         var documentCollectionUri = UriFactory.CreateDocumentCollectionUri(CosmosClientWrapper.dbName, CosmosClientWrapper.collectionId);
         var result = documentClient.CreateDocumentQuery<ReminderDocument>(

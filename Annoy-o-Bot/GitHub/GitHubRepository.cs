@@ -4,15 +4,15 @@ using Octokit;
 
 namespace Annoy_o_Bot.GitHub;
 
-public class GitHubAppInstallation : IGitHubAppInstallation
+public class GitHubRepository : IGitHubRepository
 {
-    private GitHubClient installationClient = null!;
-    private long repositoryId;
+    private readonly GitHubClient installationClient;
+    private readonly long repositoryId;
 
-    public async Task Initialize(long installationId, long repositoryId)
+    public GitHubRepository(GitHubClient gitHubClient, long repositoryId)
     {
         this.repositoryId = repositoryId;
-        installationClient = await GitHubHelper.GetInstallationClient(installationId);
+        installationClient = gitHubClient;
     }
 
     public async Task<string> ReadFileContent(string filePath, string branchReference)

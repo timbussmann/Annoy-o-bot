@@ -3,10 +3,8 @@ using Octokit;
 
 namespace Annoy_o_Bot.AcceptanceTests.Fakes;
 
-class FakeGithubInstallation : IGitHubAppInstallation
+class FakeGitHubRepository : IGitHubRepository
 {
-    public bool Initialized { get; private set; }
-
     public long InstallationId { get; private set; }
 
     public long RepositoryId { get; private set; }
@@ -18,13 +16,11 @@ class FakeGithubInstallation : IGitHubAppInstallation
     public List<NewIssue> Issues { get; set; } = new();
     
     private readonly Dictionary<string, string> files = new();
-    
-    public Task Initialize(long installationId, long repositoryId)
+
+    public FakeGitHubRepository(long installationId, long repositoryId)
     {
-        RepositoryId = repositoryId;
         InstallationId = installationId;
-        Initialized = true;
-        return Task.CompletedTask;
+        RepositoryId = repositoryId;
     }
 
     public void AddFileContent(string filePath, string content)
@@ -55,4 +51,6 @@ class FakeGithubInstallation : IGitHubAppInstallation
         Issues.Add(issue);
         return Task.FromResult(new Issue());
     }
+
+
 }

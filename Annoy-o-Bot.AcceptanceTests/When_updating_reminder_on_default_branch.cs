@@ -12,9 +12,11 @@ public class When_updating_reminder_on_default_branch : AcceptanceTest
     [Fact]
     public async Task Should_update_reminder_in_database()
     {
-        var appInstallation = new FakeGithubInstallation();
-        var cosmosDB = new CosmosClientWrapper();
-        var handler = new CallbackHandler(appInstallation, configurationBuilder.Build());
+        long installationId = Random.Shared.NextInt64();
+        long repositoryId = Random.Shared.NextInt64();
+        var appInstallation = new FakeGitHubRepository(installationId, repositoryId);
+        var gitHubApi = new FakeGitHubApi(appInstallation);
+        var handler = new CallbackHandler(gitHubApi, configurationBuilder.Build());
 
         // Create reminder:
         var createCommit = new CallbackModel.CommitModel
@@ -26,6 +28,8 @@ public class When_updating_reminder_on_default_branch : AcceptanceTest
             }
         };
         var createCallback = CreateGitHubCallbackModel(commits: createCommit);
+        createCallback.Installation.Id = installationId;
+        createCallback.Repository.Id = repositoryId;
         var createRequest = CreateGitHubCallbackRequest(createCallback);
 
         var initialReminder = new Reminder
@@ -48,8 +52,8 @@ public class When_updating_reminder_on_default_branch : AcceptanceTest
             }
         };
         var updateCallback = CreateGitHubCallbackModel(commits: updateCommit);
-        updateCallback.Installation.Id = createCallback.Installation.Id;
-        updateCallback.Repository.Id = createCallback.Repository.Id;
+        updateCallback.Installation.Id = installationId;
+        updateCallback.Repository.Id = repositoryId;
         var updateRequest = CreateGitHubCallbackRequest(updateCallback);
 
         var updatedReminder = new Reminder
@@ -70,7 +74,7 @@ public class When_updating_reminder_on_default_branch : AcceptanceTest
         var comment = Assert.Single(appInstallation.Comments.Where(c => c.commitId == updateCommit.Id));
         Assert.Contains($"Updated reminder '{updatedReminder.Title}'", comment.comment);
 
-        await CreateDueReminders(appInstallation);
+        await CreateDueReminders(gitHubApi);
         var issue = Assert.Single(appInstallation.Issues);
         Assert.Equal(updatedReminder.Title, issue.Title);
     }

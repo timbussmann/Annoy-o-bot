@@ -19,13 +19,13 @@ namespace Annoy_o_Bot
 {
     public class CallbackHandler
     {
-        private IGitHubAppInstallation githubClient;
+        private readonly IGitHubApi gitHubApi;
         private IConfiguration configuration;
         private ICosmosClientWrapper cosmosWrapper;
 
-        public CallbackHandler(IGitHubAppInstallation githubClient, IConfiguration configuration)
+        public CallbackHandler(IGitHubApi gitHubApi, IConfiguration configuration)
         {
-            this.githubClient = githubClient;
+            this.gitHubApi = gitHubApi;
             this.configuration = configuration;
             this.cosmosWrapper = new CosmosClientWrapper();
         }
@@ -49,7 +49,7 @@ namespace Annoy_o_Bot
             }
 
             var requestObject = await ParseRequest(req, log);
-            await githubClient.Initialize(requestObject.Installation.Id, requestObject.Repository.Id);
+            var githubClient = await gitHubApi.GetRepository(requestObject.Installation.Id, requestObject.Repository.Id);
 
             if (requestObject.HeadCommit == null)
             {
@@ -163,7 +163,7 @@ namespace Annoy_o_Bot
             return requestObject;
         }
 
-        private static async Task TryCreateCheckRun(IGitHubAppInstallation installationClient, long repositoryId, NewCheckRun checkRun, ILogger logger)
+        private static async Task TryCreateCheckRun(IGitHubRepository installationClient, long repositoryId, NewCheckRun checkRun, ILogger logger)
         {
             // Ignore check run failures for now. Check run permissions were added later, so users might not have granted permissions to add check runs.
             try
@@ -176,7 +176,7 @@ namespace Annoy_o_Bot
             }
         }
 
-        static async Task<List<(string, Reminder)>> LoadReminder(ICollection<string> filePaths, CallbackModel requestObject, IGitHubAppInstallation installationClient)
+        static async Task<List<(string, Reminder)>> LoadReminder(ICollection<string> filePaths, CallbackModel requestObject, IGitHubRepository installationClient)
         {
             var results = new List<(string, Reminder)>(filePaths.Count); // potentially lower but never higher than number of files
             foreach (var filePath in filePaths)
@@ -201,7 +201,7 @@ namespace Annoy_o_Bot
             return results;
         }
 
-        async Task DeleteRemovedReminders(ICollection<string> deletedFiles, IDocumentClient documentClient, ILogger log, CallbackModel requestObject, IGitHubAppInstallation client)
+        async Task DeleteRemovedReminders(ICollection<string> deletedFiles, IDocumentClient documentClient, ILogger log, CallbackModel requestObject, IGitHubRepository client)
         {
             foreach (var deletedReminder in deletedFiles)
             {

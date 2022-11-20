@@ -13,13 +13,13 @@ namespace Annoy_o_Bot
 {
     public class TimeoutFunction
     {
-        private ICosmosClientWrapper cosmosWrapper;
-        private Func<long, long, IGitHubAppInstallation> installationClientFactory;
+        private readonly IGitHubApi gitHubApi;
+        private readonly ICosmosClientWrapper cosmosWrapper;
 
-        public TimeoutFunction(Func<long, long, IGitHubAppInstallation> installationClientFactory)
+        public TimeoutFunction(IGitHubApi gitHubApi)
         {
+            this.gitHubApi = gitHubApi;
             this.cosmosWrapper = new CosmosClientWrapper();
-            this.installationClientFactory = installationClientFactory;
         }
 
         [FunctionName("TimeoutFunction")]
@@ -52,7 +52,7 @@ namespace Annoy_o_Bot
                             Body = reminder.Reminder.Message,
                         };
                         foreach (var assignee in reminder.Reminder.Assignee?.Split(';',
-                            StringSplitOptions.RemoveEmptyEntries) ?? Enumerable.Empty<string>())
+                                     StringSplitOptions.RemoveEmptyEntries) ?? Enumerable.Empty<string>())
                         {
                             newIssue.Assignees.Add(assignee);
                         }
@@ -64,7 +64,7 @@ namespace Annoy_o_Bot
 
                         log.LogDebug($"Scheduling next due date for reminder {reminder.Id} for {reminder.NextReminder}");
 
-                        var installationClient = installationClientFactory(reminder.InstallationId, reminder.RepositoryId);
+                        var installationClient = await gitHubApi.GetRepository(reminder.InstallationId, reminder.RepositoryId);
                         var issue = await installationClient.CreateIssue(newIssue);
 
                         log.LogInformation($"Created reminder issue #{issue.Number} based on reminder {reminder.Id}");
@@ -90,7 +90,5 @@ namespace Annoy_o_Bot
                 }
             }
         }
-
-        
     }
 }

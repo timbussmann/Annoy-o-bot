@@ -12,9 +12,11 @@ public class When_deleting_reminder_on_default_branch : AcceptanceTest
     [Fact]
     public async Task Should_delete_reminder_in_database()
     {
-        var appInstallation = new FakeGithubInstallation();
-        var cosmosDB = new CosmosClientWrapper();
-        var handler = new CallbackHandler(appInstallation, configurationBuilder.Build());
+        long installationId = Random.Shared.NextInt64();
+        long repositoryId = Random.Shared.NextInt64();
+        var appInstallation = new FakeGitHubRepository(installationId, repositoryId);
+        var gitHubApi = new FakeGitHubApi(appInstallation);
+        var handler = new CallbackHandler(gitHubApi, configurationBuilder.Build());
 
         // Create reminder:
         var createCommit = new CallbackModel.CommitModel
@@ -26,6 +28,8 @@ public class When_deleting_reminder_on_default_branch : AcceptanceTest
             }
         };
         var createCallback = CreateGitHubCallbackModel(commits: createCommit);
+        createCallback.Installation.Id = installationId;
+        createCallback.Repository.Id = repositoryId;
         var createRequest = CreateGitHubCallbackRequest(createCallback);
 
         var reminder = new Reminder
@@ -48,8 +52,8 @@ public class When_deleting_reminder_on_default_branch : AcceptanceTest
             }
         };
         var deleteCallback = CreateGitHubCallbackModel(commits: deleteCommit);
-        deleteCallback.Installation.Id = createCallback.Installation.Id;
-        deleteCallback.Repository.Id = createCallback.Repository.Id;
+        deleteCallback.Installation.Id = installationId;
+        deleteCallback.Repository.Id = repositoryId;
         var deleteRequest = CreateGitHubCallbackRequest(deleteCallback);
 
         var result = await handler.Run(deleteRequest, documentClient, NullLogger.Instance);
@@ -64,7 +68,7 @@ public class When_deleting_reminder_on_default_branch : AcceptanceTest
         var comment = Assert.Single(comments);
         Assert.Contains($"Deleted reminder '{deleteCommit.Removed[0]}'", comment.comment);
 
-        await CreateDueReminders(appInstallation);
+        await CreateDueReminders(gitHubApi);
         Assert.Empty(appInstallation.Issues);
     }
 
