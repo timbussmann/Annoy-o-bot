@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using GitHubJwt;
+using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using Octokit;
 
@@ -17,9 +18,9 @@ namespace Annoy_o_Bot
         /// <summary>
         /// Validates whether the request is indeed coming from GitHub using the webhook secret.
         /// </summary>
-        public static void ValidateRequest(HttpRequest request, string secret, ILogger? logger)
+        public static void ValidateRequest(HttpRequestData request, string secret, ILogger? logger)
         {
-            if (!request.Headers.TryGetValue("X-Hub-Signature-256", out var sha256Signature))
+            if (!request.Headers.TryGetValues("X-Hub-Signature-256", out var sha256Signature))
             {
                 throw new Exception("Incoming callback request does not contain a 'X-Hub-Signature' header");
             }

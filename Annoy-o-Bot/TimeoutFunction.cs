@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using Octokit;
 
@@ -10,7 +10,7 @@ namespace Annoy_o_Bot
 {
     public static class TimeoutFunction
     {
-        [FunctionName("TimeoutFunction")]
+        [Function("TimeoutFunction")]
         public static async Task Run(
             //[HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
             [TimerTrigger("0 */10 * * * *", RunOnStartup = false)]TimerInfo timer, // once every 10 minutes

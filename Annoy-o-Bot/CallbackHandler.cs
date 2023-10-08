@@ -2,16 +2,17 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.Http;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Azure.Documents;
 using Microsoft.Azure.Documents.Client;
 using Microsoft.Extensions.Logging;
 using Octokit;
 using Annoy_o_Bot.Parser;
+using Microsoft.Azure.Cosmos;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.Functions.Worker.Http;
+using Org.BouncyCastle.Ocsp;
 
 namespace Annoy_o_Bot
 {
@@ -22,23 +23,23 @@ namespace Annoy_o_Bot
         internal const string dbName = "annoydb";
         internal const string collectionId = "reminders";
 
-        [FunctionName("Callback")]
-        public static async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
-            [CosmosDB(dbName, collectionId, ConnectionStringSetting = "CosmosDBConnection")]IAsyncCollector<ReminderDocument> documents,
-            [CosmosDB(dbName, collectionId, ConnectionStringSetting = "CosmosDBConnection")]IDocumentClient documentClient,
+        [Function("Callback")]
+        public static async Task<HttpResponseData> Run(
+            [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequestData req,
+            [CosmosDBOutput(dbName, collectionId, Connection = "CosmosDBConnection")]IAsyncCollector<ReminderDocument> documents,
+            [CosmosDBInput(dbName, collectionId, Connection = "CosmosDBConnection")]CosmosClient cosmosClient,
             ILogger log)
         {
             GitHubHelper.ValidateRequest(req, callbackSecret ?? throw new Exception("Missing 'WebhookSecret' env var"), log);
-            if (!req.Headers.TryGetValue("X-GitHub-Event", out var callbackEvent) || callbackEvent != "push")
+            if (!req.Headers.TryGetValues("X-GitHub-Event", out var eventValues) || eventValues.Contains("push"))
             {
-                if (callbackEvent != "check_suite") // ignore check_suite events
+                if (eventValues.Contains("check_suite")) // ignore check_suite events
                 {
                     // this typically seem to be installation related events.
-                    log.LogWarning($"Non-push callback. 'X-GitHub-Event': '{callbackEvent}'");
+                    log.LogWarning($"Non-push callback. 'X-GitHub-Event': '{string.Join(',', eventValues)}'");
                 }
                 
-                return new OkResult();
+                return req.CreateResponse(HttpStatusCode.OK);
             }
 
             var requestObject = await ParseRequest(req, log);
@@ -47,7 +48,7 @@ namespace Annoy_o_Bot
             if (requestObject.HeadCommit == null)
             {
                 // no commits on push (e.g. branch delete)
-                return new OkResult();
+                return req.CreateResponse(HttpStatusCode.Accepted);
             }
 
             log.LogInformation($"Handling changes made to branch '{requestObject.Repository.Name}{requestObject.Ref}' by head-commit '{requestObject.HeadCommit.Id}'.");
@@ -88,7 +89,7 @@ namespace Annoy_o_Bot
                 {
                     var documentId = BuildDocumentId(requestObject, fileName);
                     var documentUri = UriFactory.CreateDocumentUri(dbName, collectionId, documentId);
-                    var existingReminder = await documentClient.ReadDocumentAsync<ReminderDocument>(documentUri, new RequestOptions { PartitionKey = new PartitionKey(documentId) });
+                    var existingReminder = await cosmosClient.ReadDocumentAsync<ReminderDocument>(documentUri, new RequestOptions { PartitionKey = new PartitionKey(documentId) });
 
                     var document = existingReminder.Document;
                     document.Reminder = reminder;
@@ -105,7 +106,7 @@ namespace Annoy_o_Bot
                         $"Updated reminder '{reminder.Title}' for {document.NextReminder:D}");
                 }
 
-                await DeleteRemovedReminders(fileChanges.Deleted, documentClient, log, requestObject, installationClient);
+                await DeleteRemovedReminders(fileChanges.Deleted, cosmosClient, log, requestObject, installationClient);
             }
             else
             {
@@ -140,10 +141,10 @@ namespace Annoy_o_Bot
                 }
             }
 
-            return new OkResult();
+            return req.CreateResponse(HttpStatusCode.Accepted);
         }
 
-        private static async Task<CallbackModel> ParseRequest(HttpRequest req, ILogger log)
+        private static async Task<CallbackModel> ParseRequest(HttpRequestData req, ILogger log)
         {
             CallbackModel requestObject;
             try
