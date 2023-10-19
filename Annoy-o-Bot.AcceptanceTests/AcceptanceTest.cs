@@ -83,8 +83,4 @@ public class AcceptanceTest
             "sha256=" + Convert.ToHexString(HMACSHA256.HashData(Encoding.UTF8.GetBytes(SignatureKey), messageContent)));
         return request;
     }
-
-
-
-
 }
