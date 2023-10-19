@@ -7,7 +7,6 @@ using Xunit;
 
 namespace Annoy_o_Bot.CosmosDB.Tests;
 
-//TODO split using partial classes
 public class CosmosWrapperTests : IClassFixture<CosmosFixture>
 {
     private CosmosFixture cosmosFixture;

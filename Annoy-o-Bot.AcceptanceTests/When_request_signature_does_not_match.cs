@@ -4,8 +4,6 @@ using Xunit;
 
 namespace Annoy_o_Bot.AcceptanceTests;
 
-//TODO: Contract test for X-Hub-Signature-256
-
 public class When_request_signature_does_not_match : AcceptanceTest
 {
     [Fact]

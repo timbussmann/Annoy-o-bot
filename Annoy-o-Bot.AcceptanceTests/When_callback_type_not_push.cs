@@ -5,8 +5,6 @@ using Xunit;
 
 namespace Annoy_o_Bot.AcceptanceTests;
 
-//TODO: Contract test for X-GitHub-Event
-
 public class When_callback_type_not_push : AcceptanceTest
 {
     [Fact]

@@ -33,7 +33,6 @@ class FakeGitHubRepository : IGitHubRepository
         files[filePath] = content;
     }
 
-    //TODO test behavior when file does not exist
     public Task<string> ReadFileContent(string filePath, string branchReference)
     {
         return Task.FromResult(files[filePath]);
