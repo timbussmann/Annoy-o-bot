@@ -11,7 +11,9 @@ public class When_adding_new_reminder_on_default_branch : AcceptanceTest
     [Fact]
     public async Task Should_create_reminder_when_due()
     {
-        var repository = FakeGitHubRepository.CreateNew();
+        var gitHubApi = new FakeGitHubApi();
+
+        var repository = gitHubApi.CreateNewRepository();
         var reminder = new Reminder
         {
             Title = "Some title for the new reminder",
@@ -21,7 +23,6 @@ public class When_adding_new_reminder_on_default_branch : AcceptanceTest
         var callback = repository.CommitNewReminder(reminder);
         var request = CreateCallbackHttpRequest(callback);
 
-        var gitHubApi = new FakeGitHubApi(repository);
         var handler = new CallbackHandler(gitHubApi, configurationBuilder.Build());
         var result = await handler.Run(request, documentClient, NullLogger.Instance);
 
@@ -45,7 +46,9 @@ public class When_adding_new_reminder_on_default_branch : AcceptanceTest
     [Fact]
     public async Task Should_not_yet_create_reminder_when_not_due()
     {
-        var repository = FakeGitHubRepository.CreateNew();
+        var gitHubApi = new FakeGitHubApi();
+
+        var repository = gitHubApi.CreateNewRepository();
         var reminder = new Reminder
         {
             Title = "Some title for the new reminder",
@@ -55,7 +58,6 @@ public class When_adding_new_reminder_on_default_branch : AcceptanceTest
         var callback = repository.CommitNewReminder(reminder);
         var request = CreateCallbackHttpRequest(callback);
 
-        var gitHubApi = new FakeGitHubApi(repository);
         var handler = new CallbackHandler(gitHubApi, configurationBuilder.Build());
         var result = await handler.Run(request, documentClient, NullLogger.Instance);
 

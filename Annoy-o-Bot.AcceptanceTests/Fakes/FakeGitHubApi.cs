@@ -10,17 +10,11 @@ class FakeGitHubApi : IGitHubApi
     {
     }
 
-    public FakeGitHubApi(params FakeGitHubRepository[] reposInstallations)
+    public FakeGitHubRepository CreateNewRepository()
     {
-        foreach (var installation in reposInstallations)
-        {
-            AddRepository(installation);
-        }
-    }
-
-    public void AddRepository(FakeGitHubRepository repository)
-    {
+        var repository = new FakeGitHubRepository(Random.Shared.NextInt64(), Random.Shared.NextInt64());
         registeredRepos.Add((repository.InstallationId, repository.RepositoryId), repository);
+        return repository;
     }
 
     public Task<IGitHubRepository> GetRepository(long installationId, long repositoryId)

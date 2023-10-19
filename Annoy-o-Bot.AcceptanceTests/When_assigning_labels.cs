@@ -10,7 +10,8 @@ public class When_assigning_labels : AcceptanceTest
     [Fact]
     public async Task Should_assign_labels_to_issue()
     {
-        var repository = FakeGitHubRepository.CreateNew();
+        var gitHubApi = new FakeGitHubApi();
+        var repository = gitHubApi.CreateNewRepository();
         var reminder = new Reminder
         {
             Title = "Some title for the new reminder",
@@ -21,7 +22,6 @@ public class When_assigning_labels : AcceptanceTest
         var callback = repository.CommitNewReminder(reminder);
         var request = CreateCallbackHttpRequest(callback);
 
-        var gitHubApi = new FakeGitHubApi(repository);
         var handler = new CallbackHandler(gitHubApi, configurationBuilder.Build());
         var result = await handler.Run(request, documentClient, NullLogger.Instance);
 

@@ -11,7 +11,9 @@ public class When_adding_new_reminder_on_non_default_branch : AcceptanceTest
     [Fact]
     public async Task Should_only_create_successful_check_run_for_valid_reminder_definition()
     {
-        var appInstallation = FakeGitHubRepository.CreateNew();
+        var gitHubApi = new FakeGitHubApi();
+
+        var appInstallation = gitHubApi.CreateNewRepository();
         var reminder = new Reminder
         {
             Title = "Some title for the new reminder",
@@ -21,7 +23,6 @@ public class When_adding_new_reminder_on_non_default_branch : AcceptanceTest
         var callback = appInstallation.CommitNewReminder(reminder, branch: "my-branch");
         var request = CreateCallbackHttpRequest(callback);
 
-        var gitHubApi = new FakeGitHubApi(appInstallation);
         var handler = new CallbackHandler(gitHubApi, configurationBuilder.Build());
 
         var result = await handler.Run(request, documentClient, NullLogger.Instance);
@@ -47,8 +48,8 @@ public class When_adding_new_reminder_on_non_default_branch : AcceptanceTest
     [Fact]
     public async Task Should_only_create_failed_check_run_for_invalid_reminder_definition()
     {
-        var appInstallation = FakeGitHubRepository.CreateNew();
-        var gitHubApi = new FakeGitHubApi(appInstallation);
+        var gitHubApi = new FakeGitHubApi();
+        var appInstallation = gitHubApi.CreateNewRepository();
 
         var callback = appInstallation.CommitNewReminder(new Reminder(), branch: "my-branch");
         var request = CreateCallbackHttpRequest(callback);

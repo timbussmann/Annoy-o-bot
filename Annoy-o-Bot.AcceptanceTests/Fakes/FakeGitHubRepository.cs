@@ -16,12 +16,7 @@ class FakeGitHubRepository : IGitHubRepository
     public List<NewIssue> Issues { get; set; } = new();
 
     private readonly Dictionary<string, string> files = new();
-
-    public static FakeGitHubRepository CreateNew()
-    {
-        return new FakeGitHubRepository(Random.Shared.NextInt64(), Random.Shared.NextInt64());
-    }
-
+    
     public FakeGitHubRepository(long installationId, long repositoryId)
     {
         InstallationId = installationId;
@@ -55,6 +50,4 @@ class FakeGitHubRepository : IGitHubRepository
         Issues.Add(issue);
         return Task.FromResult(new Issue());
     }
-
-
 }

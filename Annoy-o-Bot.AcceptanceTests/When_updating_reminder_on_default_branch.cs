@@ -12,8 +12,8 @@ public class When_updating_reminder_on_default_branch : AcceptanceTest
     [Fact]
     public async Task Should_update_reminder_in_database()
     {
-        var appInstallation = FakeGitHubRepository.CreateNew();
-        var gitHubApi = new FakeGitHubApi(appInstallation);
+        var gitHubApi = new FakeGitHubApi();
+        var appInstallation = gitHubApi.CreateNewRepository();
         var handler = new CallbackHandler(gitHubApi, configurationBuilder.Build());
 
         // Create reminder:

@@ -12,8 +12,8 @@ public class When_deleting_reminder_on_default_branch : AcceptanceTest
     [Fact]
     public async Task Should_delete_reminder_in_database()
     {
-        var repository = FakeGitHubRepository.CreateNew();
-        var gitHubApi = new FakeGitHubApi(repository);
+        var gitHubApi = new FakeGitHubApi();
+        var repository = gitHubApi.CreateNewRepository();
         var handler = new CallbackHandler(gitHubApi, configurationBuilder.Build());
 
         // Create reminder:
