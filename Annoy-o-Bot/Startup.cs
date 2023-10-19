@@ -13,6 +13,5 @@ public class Startup : FunctionsStartup
     public override void Configure(IFunctionsHostBuilder builder)
     {
         builder.Services.AddScoped<IGitHubApi, GitHubApi>();
-        builder.Services.AddScoped<ICosmosClientWrapper, CosmosClientWrapper>();
     }
 }

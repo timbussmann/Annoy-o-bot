@@ -8,8 +8,6 @@ using Microsoft.Azure.Documents.Client;
 
 namespace Annoy_o_Bot.CosmosDB;
 
-//TODO: no longer requires DI, take client ref in ctor
-
 public class CosmosClientWrapper : ICosmosClientWrapper
 {
     public const string dbName = "annoydb";
