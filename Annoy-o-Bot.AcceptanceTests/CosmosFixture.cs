@@ -10,7 +10,7 @@ public class CosmosFixture : IDisposable
     public CosmosFixture()
     {
         // CosmosDB emulator connection settings
-        var documentClient = CreateDocumentClient();
+        using var documentClient = CreateDocumentClient();
 
         documentClient.CreateDatabaseIfNotExistsAsync(new Database
         {
