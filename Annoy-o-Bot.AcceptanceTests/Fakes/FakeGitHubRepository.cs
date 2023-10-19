@@ -14,7 +14,7 @@ class FakeGitHubRepository : IGitHubRepository
     public List<NewCheckRun> CheckRuns { get; set; } = new();
 
     public List<NewIssue> Issues { get; set; } = new();
-    
+
     private readonly Dictionary<string, string> files = new();
 
     public static FakeGitHubRepository CreateNew()

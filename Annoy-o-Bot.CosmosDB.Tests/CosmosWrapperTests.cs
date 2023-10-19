@@ -105,12 +105,12 @@ public class CosmosWrapperTests : IClassFixture<CosmosFixture>
         };
         await wrapper.AddOrUpdateReminder(DocumentClient, existingReminder);
 
-        var result = ExecuteReminderQuery();
+        var result = ExecuteReminderQuery().ToList().Single();
 
-        Assert.Equivalent(existingReminder, result.Single());
+        Assert.Equivalent(existingReminder, result);
     }
 
-    private IQueryable<ReminderDocument> ExecuteReminderQuery()
+    IQueryable<ReminderDocument> ExecuteReminderQuery()
     {
         var documentCollectionUri =
             UriFactory.CreateDocumentCollectionUri(CosmosClientWrapper.dbName, CosmosClientWrapper.collectionId);
