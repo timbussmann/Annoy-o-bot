@@ -188,12 +188,7 @@ namespace Annoy_o_Bot
                     continue;
                 }
 
-                var content =
-                    await installationClient.ReadFileContent(filePath, requestObject.Ref);
-                //var content = await installationClient.Repository.Content.GetAllContentsByRef(
-                //    requestObject.Repository.Id,
-                //    filePath,
-                //    requestObject.Ref);
+                var content = await installationClient.ReadFileContent(filePath, requestObject.Ref);
                 var reminder = parser.Parse(content);
                 results.Add((filePath, reminder));
             }
