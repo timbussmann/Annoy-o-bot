@@ -2,27 +2,36 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Annoy_o_Bot.CosmosDB;
+using Annoy_o_Bot.GitHub;
+using Microsoft.Azure.Documents;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using Octokit;
 
 namespace Annoy_o_Bot
 {
-    public static class TimeoutFunction
+    public class TimeoutFunction
     {
+        private readonly IGitHubApi gitHubApi;
+        private readonly ICosmosClientWrapper cosmosWrapper;
+
+        public TimeoutFunction(IGitHubApi gitHubApi)
+        {
+            this.gitHubApi = gitHubApi;
+            this.cosmosWrapper = new CosmosClientWrapper();
+        }
+
         [FunctionName("TimeoutFunction")]
-        public static async Task Run(
+        public async Task Run(
             //[HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
             [TimerTrigger("0 */10 * * * *", RunOnStartup = false)]TimerInfo timer, // once every 10 minutes
-            [CosmosDB(CallbackHandler.dbName,
-                CallbackHandler.collectionId,
+            [CosmosDB(CosmosClientWrapper.dbName,
+                CosmosClientWrapper.collectionId,
                 ConnectionStringSetting = "CosmosDBConnection",
-                SqlQuery = "SELECT TOP 50 * FROM c WHERE GetCurrentDateTime() >= c.NextReminder ORDER BY c.NextReminder ASC")]
+                SqlQuery = CosmosClientWrapper.ReminderQuery)]
             IEnumerable<ReminderDocument> dueReminders,
-            [CosmosDB(CallbackHandler.dbName,
-                CallbackHandler.collectionId,
-                ConnectionStringSetting = "CosmosDBConnection")]
-            IAsyncCollector<ReminderDocument> documents,
+            [CosmosDB(CosmosClientWrapper.dbName, CosmosClientWrapper.collectionId, ConnectionStringSetting = "CosmosDBConnection")] IDocumentClient documentClient,
             ILogger log)
         {
             foreach (var reminder in dueReminders)
@@ -38,13 +47,12 @@ namespace Annoy_o_Bot
                     {
                         reminder.CalculateNextReminder(now);
 
-                        var installationClient = await GitHubHelper.GetInstallationClient(reminder.InstallationId);
                         var newIssue = new NewIssue(reminder.Reminder.Title)
                         {
                             Body = reminder.Reminder.Message,
                         };
                         foreach (var assignee in reminder.Reminder.Assignee?.Split(';',
-                            StringSplitOptions.RemoveEmptyEntries) ?? Enumerable.Empty<string>())
+                                     StringSplitOptions.RemoveEmptyEntries) ?? Enumerable.Empty<string>())
                         {
                             newIssue.Assignees.Add(assignee);
                         }
@@ -56,19 +64,20 @@ namespace Annoy_o_Bot
 
                         log.LogDebug($"Scheduling next due date for reminder {reminder.Id} for {reminder.NextReminder}");
 
-                        var issue = await installationClient.Issue.Create(reminder.RepositoryId, newIssue);
+                        var installationClient = await gitHubApi.GetRepository(reminder.InstallationId, reminder.RepositoryId);
+                        var issue = await installationClient.CreateIssue(newIssue);
 
                         log.LogInformation($"Created reminder issue #{issue.Number} based on reminder {reminder.Id}");
 
                         reminder.LastReminder = now;
-                        await documents.AddAsync(reminder);
+                        await cosmosWrapper.AddOrUpdateReminder(documentClient, reminder);
                     }
                     else
                     {
                         // Next Reminder might have been reset due to an update, so we will just recalculate it.
                         reminder.CalculateNextReminder(now);
                         log.LogWarning($"Found LastReminder ({reminder.LastReminder:g}) > NextReminder ({reminder.NextReminder:g}) in reminder {reminder.Id}");
-                        await documents.AddAsync(reminder);
+                        await cosmosWrapper.AddOrUpdateReminder(documentClient, reminder);
                     }
                 }
                 catch (ApiValidationException validationException)
@@ -81,7 +90,5 @@ namespace Annoy_o_Bot
                 }
             }
         }
-
-        
     }
 }

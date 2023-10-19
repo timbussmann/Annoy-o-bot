@@ -1,13 +1,13 @@
-﻿namespace Annoy_o_Bot.Tests
-{
-    using System;
-    using System.IO;
-    using System.Security.Cryptography;
-    using System.Text;
-    using Microsoft.AspNetCore.Http;
-    using Microsoft.AspNetCore.Http.Internal;
-    using Xunit;
+﻿using Microsoft.Extensions.Logging.Abstractions;
+using System;
+using System.IO;
+using System.Text;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Internal;
+using Xunit;
 
+namespace Annoy_o_Bot.Tests
+{
     public class GitHubHelperTests
     {
         [Theory]
@@ -19,7 +19,7 @@
             request.Headers.Add("X-Hub-Signature-256", $"sha256={hash}");
             request.Body = new MemoryStream(Encoding.UTF8.GetBytes("Hello World!"));
             
-            GitHubHelper.ValidateRequest(request, "secretkey", null);
+            GitHubHelper.ValidateRequest(request, "secretkey", NullLogger.Instance);
         }
 
         [Fact]
@@ -29,7 +29,7 @@
             request.Headers.Add("X-Hub-Signature-256", "sha256=B0D3E5FBD7B71A4539E27257AF48C677E8CAD2F803C2CC87C3164CD4254AFF79");
             request.Body = new MemoryStream(Encoding.UTF8.GetBytes("Hello Wörld!"));
             
-            Assert.Throws<Exception>(() => GitHubHelper.ValidateRequest(request, "somekey", null));
+            Assert.Throws<Exception>(() => GitHubHelper.ValidateRequest(request, "somekey", NullLogger.Instance));
         }
     }
 }
