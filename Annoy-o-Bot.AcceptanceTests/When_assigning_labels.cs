@@ -5,19 +5,18 @@ using Xunit;
 
 namespace Annoy_o_Bot.AcceptanceTests;
 
-//TODO Tests for different interval configurations
-
-public class When_adding_new_reminder_on_default_branch : AcceptanceTest
+public class When_assigning_labels : AcceptanceTest
 {
     [Fact]
-    public async Task Should_create_reminder_when_due()
+    public async Task Should_assign_labels_to_issue()
     {
         var repository = FakeGitHubRepository.CreateNew();
         var reminder = new Reminder
         {
             Title = "Some title for the new reminder",
             Date = DateTime.UtcNow.AddDays(-1),
-            Interval = Interval.Weekly
+            Interval = Interval.Weekly,
+            Labels = new[] { "label1", "label2" }
         };
         var callback = repository.CommitNewReminder(reminder);
         var request = CreateCallbackHttpRequest(callback);
@@ -27,23 +26,15 @@ public class When_adding_new_reminder_on_default_branch : AcceptanceTest
         var result = await handler.Run(request, documentClient, NullLogger.Instance);
 
         Assert.IsType<OkResult>(result);
-
-        Assert.Equal(callback.Installation.Id, repository.InstallationId);
-        Assert.Equal(callback.Repository.Id, repository.RepositoryId);
-
         await CreateDueReminders(gitHubApi);
 
         var issue = Assert.Single(repository.Issues);
-        Assert.Equal(reminder.Title, issue.Title);
-        Assert.Equal(reminder.Message, issue.Body);
-
-        var comments = Assert.Single(repository.Comments.GroupBy(c => c.commitId));
-        Assert.Equal(callback.HeadCommit.Id, comments.Key);
-        var comment = Assert.Single(comments);
-        Assert.Contains($"Created reminder '{reminder.Title}'", comment.comment);
+        Assert.Contains("label1", issue.Labels);
+        Assert.Contains("label2", issue.Labels);
+        Assert.Equal(2, issue.Labels.Count);
     }
 
-    public When_adding_new_reminder_on_default_branch(CosmosFixture cosmosFixture) : base(cosmosFixture)
+    public When_assigning_labels(CosmosFixture cosmosFixture) : base(cosmosFixture)
     {
     }
 }
