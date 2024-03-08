@@ -23,7 +23,7 @@ public class When_assigning_labels : AcceptanceTest
         var request = CreateCallbackHttpRequest(callback);
 
         var handler = new CallbackHandler(gitHubApi, configurationBuilder.Build());
-        var result = await handler.Run(request, documentClient, NullLogger.Instance);
+        var result = await handler.Run(request, container, NullLogger.Instance);
 
         Assert.IsType<OkResult>(result);
         await CreateDueReminders(gitHubApi);

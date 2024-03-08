@@ -26,7 +26,7 @@ public class When_updating_reminder_on_default_branch : AcceptanceTest
         var createCallback = appInstallation.CommitNewReminder(initialReminder);
         var createRequest = CreateCallbackHttpRequest(createCallback);
 
-        await handler.Run(createRequest, documentClient, NullLogger.Instance);
+        await handler.Run(createRequest, container, NullLogger.Instance);
 
         // Update reminder:
         var updatedReminder = new Reminder
@@ -48,7 +48,7 @@ public class When_updating_reminder_on_default_branch : AcceptanceTest
         var updateCallback = appInstallation.Commit(updateCommit);
         var updateRequest = CreateCallbackHttpRequest(updateCallback);
         
-        var result = await handler.Run(updateRequest, documentClient, NullLogger.Instance);
+        var result = await handler.Run(updateRequest, container, NullLogger.Instance);
 
         Assert.IsType<OkResult>(result);
 

@@ -4,10 +4,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using Annoy_o_Bot.CosmosDB;
 using Annoy_o_Bot.GitHub;
+using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Documents;
-using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using Octokit;
+using Microsoft.Azure.Functions.Worker;
 
 namespace Annoy_o_Bot
 {
@@ -22,16 +23,21 @@ namespace Annoy_o_Bot
             this.cosmosWrapper = new CosmosClientWrapper();
         }
 
-        [FunctionName("TimeoutFunction")]
+        [Function("TimeoutFunction")]
         public async Task Run(
             //[HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
             [TimerTrigger("0 */10 * * * *", RunOnStartup = false)]TimerInfo timer, // once every 10 minutes
-            [CosmosDB(CosmosClientWrapper.dbName,
-                CosmosClientWrapper.collectionId,
-                ConnectionStringSetting = "CosmosDBConnection",
+            [CosmosDBInput(
+                databaseName: CosmosClientWrapper.dbName,
+                containerName: CosmosClientWrapper.collectionId,
+                Connection = "CosmosDBConnection",
                 SqlQuery = CosmosClientWrapper.ReminderQuery)]
             IEnumerable<ReminderDocument> dueReminders,
-            [CosmosDB(CosmosClientWrapper.dbName, CosmosClientWrapper.collectionId, ConnectionStringSetting = "CosmosDBConnection")] IDocumentClient documentClient,
+            [CosmosDBInput(
+                databaseName: CosmosClientWrapper.dbName,
+                containerName: CosmosClientWrapper.collectionId,
+                Connection = "CosmosDBConnection")]
+            Container documentClient,
             ILogger log)
         {
             foreach (var reminder in dueReminders)

@@ -5,15 +5,14 @@ using System.Linq;
 using System.Threading.Tasks;
 using Annoy_o_Bot.CosmosDB;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Azure.Documents;
 using Microsoft.Extensions.Logging;
 using Octokit;
 using Annoy_o_Bot.Parser;
 using Annoy_o_Bot.GitHub;
+using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Azure.Functions.Worker;
 
 namespace Annoy_o_Bot
 {
@@ -30,10 +29,14 @@ namespace Annoy_o_Bot
             this.cosmosWrapper = new CosmosClientWrapper();
         }
 
-        [FunctionName("Callback")]
+        [Function("Callback")]
         public async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
-            [CosmosDB(CosmosClientWrapper.dbName, CosmosClientWrapper.collectionId, ConnectionStringSetting = "CosmosDBConnection")]IDocumentClient documentClient,
+            [CosmosDBInput(
+                databaseName: CosmosClientWrapper.dbName,
+                containerName: CosmosClientWrapper.collectionId,
+                Connection = "CosmosDBConnection")]
+            Container documentClient,
             ILogger log)
         {
             GitHubHelper.ValidateRequest(req, configuration.GetValue<string>("WebhookSecret") ?? throw new Exception("Missing 'WebhookSecret' env var"), log);
@@ -44,7 +47,7 @@ namespace Annoy_o_Bot
                     // this typically seem to be installation related events.
                     log.LogWarning($"Non-push callback. 'X-GitHub-Event': '{callbackEvent}'");
                 }
-                
+
                 return new OkResult();
             }
 
@@ -196,7 +199,7 @@ namespace Annoy_o_Bot
             return results;
         }
 
-        async Task DeleteRemovedReminders(ICollection<string> deletedFiles, IDocumentClient documentClient, ILogger log, CallbackModel requestObject, IGitHubRepository client)
+        async Task DeleteRemovedReminders(ICollection<string> deletedFiles, Container documentClient, ILogger log, CallbackModel requestObject, IGitHubRepository client)
         {
             foreach (var deletedReminder in deletedFiles)
             {

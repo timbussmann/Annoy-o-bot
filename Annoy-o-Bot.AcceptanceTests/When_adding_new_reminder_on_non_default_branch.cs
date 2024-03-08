@@ -25,7 +25,7 @@ public class When_adding_new_reminder_on_non_default_branch : AcceptanceTest
 
         var handler = new CallbackHandler(gitHubApi, configurationBuilder.Build());
 
-        var result = await handler.Run(request, documentClient, NullLogger.Instance);
+        var result = await handler.Run(request, container, NullLogger.Instance);
 
         Assert.IsType<OkResult>(result);
 
@@ -57,7 +57,7 @@ public class When_adding_new_reminder_on_non_default_branch : AcceptanceTest
 
         var handler = new CallbackHandler(gitHubApi, configurationBuilder.Build());
 
-        await Assert.ThrowsAnyAsync<Exception>(() => handler.Run(request, documentClient, NullLogger.Instance));
+        await Assert.ThrowsAnyAsync<Exception>(() => handler.Run(request, container, NullLogger.Instance));
 
         Assert.Equal(callback.Installation.Id, appInstallation.InstallationId);
         Assert.Equal(callback.Repository.Id, appInstallation.RepositoryId);

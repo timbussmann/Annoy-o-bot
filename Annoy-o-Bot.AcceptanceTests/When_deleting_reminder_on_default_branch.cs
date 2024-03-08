@@ -26,14 +26,14 @@ public class When_deleting_reminder_on_default_branch : AcceptanceTest
         var createCallback = repository.CommitNewReminder(reminder);
         var createRequest = CreateCallbackHttpRequest(createCallback);
 
-        await handler.Run(createRequest, documentClient, NullLogger.Instance);
+        await handler.Run(createRequest, container, NullLogger.Instance);
 
         // Delete reminder:
         var deleteCommit = CallbackModelHelper.CreateCommitModel(removed: createCallback.HeadCommit.Added[0]);
         var deleteCallback = repository.Commit(deleteCommit);
         var deleteRequest = CreateCallbackHttpRequest(deleteCallback);
 
-        var result = await handler.Run(deleteRequest, documentClient, NullLogger.Instance);
+        var result = await handler.Run(deleteRequest, container, NullLogger.Instance);
         
         Assert.IsType<OkResult>(result);
 
