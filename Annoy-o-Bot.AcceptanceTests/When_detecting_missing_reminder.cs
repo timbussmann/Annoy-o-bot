@@ -12,8 +12,8 @@ public class When_detecting_missing_reminder : AcceptanceTest
     {
         var gitHubApi = new FakeGitHubApi();
         var repository = gitHubApi.CreateNewRepository();
-        var handler = new CallbackHandler(gitHubApi, configurationBuilder.Build());
-        var testee = new DetectMissingReminders(gitHubApi);
+        var handler = new CallbackHandler(gitHubApi, configurationBuilder.Build(), NullLogger<CallbackHandler>.Instance);
+        var testee = new DetectMissingReminders(gitHubApi, NullLogger<DetectMissingReminders>.Instance);
 
         var missingReminder = new Reminder()
         {
@@ -32,9 +32,9 @@ public class When_detecting_missing_reminder : AcceptanceTest
         };
         var createCallback = repository.CommitNewReminder(reminder);
         var createRequest = CreateCallbackHttpRequest(createCallback);
-        await handler.Run(createRequest, container, NullLogger.Instance);
+        await handler.Run(createRequest, container);
 
-        await testee.Run(new DefaultHttpContext().Request, container, NullLogger.Instance);
+        await testee.Run(new DefaultHttpContext().Request, container);
 
         await CreateDueReminders(gitHubApi);
 

@@ -14,7 +14,7 @@ public class When_updating_reminder_on_default_branch : AcceptanceTest
     {
         var gitHubApi = new FakeGitHubApi();
         var appInstallation = gitHubApi.CreateNewRepository();
-        var handler = new CallbackHandler(gitHubApi, configurationBuilder.Build());
+        var handler = new CallbackHandler(gitHubApi, configurationBuilder.Build(), NullLogger<CallbackHandler>.Instance);
 
         // Create reminder:
         var initialReminder = new Reminder
@@ -26,7 +26,7 @@ public class When_updating_reminder_on_default_branch : AcceptanceTest
         var createCallback = appInstallation.CommitNewReminder(initialReminder);
         var createRequest = CreateCallbackHttpRequest(createCallback);
 
-        await handler.Run(createRequest, container, NullLogger.Instance);
+        await handler.Run(createRequest, container);
 
         // Update reminder:
         var updatedReminder = new Reminder
@@ -48,7 +48,7 @@ public class When_updating_reminder_on_default_branch : AcceptanceTest
         var updateCallback = appInstallation.Commit(updateCommit);
         var updateRequest = CreateCallbackHttpRequest(updateCallback);
         
-        var result = await handler.Run(updateRequest, container, NullLogger.Instance);
+        var result = await handler.Run(updateRequest, container);
 
         Assert.IsType<OkResult>(result);
 

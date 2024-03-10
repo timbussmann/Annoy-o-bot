@@ -23,8 +23,8 @@ public class When_adding_new_reminder_on_default_branch : AcceptanceTest
         var callback = repository.CommitNewReminder(reminder);
         var request = CreateCallbackHttpRequest(callback);
 
-        var handler = new CallbackHandler(gitHubApi, configurationBuilder.Build());
-        var result = await handler.Run(request, container, NullLogger.Instance);
+        var handler = new CallbackHandler(gitHubApi, configurationBuilder.Build(), NullLogger<CallbackHandler>.Instance);
+        var result = await handler.Run(request, container);
 
         Assert.IsType<OkResult>(result);
 
@@ -58,8 +58,8 @@ public class When_adding_new_reminder_on_default_branch : AcceptanceTest
         var callback = repository.CommitNewReminder(reminder);
         var request = CreateCallbackHttpRequest(callback);
 
-        var handler = new CallbackHandler(gitHubApi, configurationBuilder.Build());
-        var result = await handler.Run(request, container, NullLogger.Instance);
+        var handler = new CallbackHandler(gitHubApi, configurationBuilder.Build(), NullLogger<CallbackHandler>.Instance);
+        var result = await handler.Run(request, container);
 
         Assert.IsType<OkResult>(result);
 

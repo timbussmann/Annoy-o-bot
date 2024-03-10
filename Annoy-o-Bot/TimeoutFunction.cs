@@ -13,12 +13,14 @@ namespace Annoy_o_Bot
 {
     public class TimeoutFunction
     {
-        private readonly IGitHubApi gitHubApi;
-        private readonly ICosmosClientWrapper cosmosWrapper;
+        readonly IGitHubApi gitHubApi;
+        readonly ICosmosClientWrapper cosmosWrapper;
+        readonly ILogger<TimeoutFunction> log;
 
-        public TimeoutFunction(IGitHubApi gitHubApi)
+        public TimeoutFunction(IGitHubApi gitHubApi, ILogger<TimeoutFunction> log)
         {
             this.gitHubApi = gitHubApi;
+            this.log = log;
             this.cosmosWrapper = new CosmosClientWrapper();
         }
 
@@ -36,8 +38,7 @@ namespace Annoy_o_Bot
                 databaseName: CosmosClientWrapper.dbName,
                 containerName: CosmosClientWrapper.collectionId,
                 Connection = "CosmosDBConnection")]
-            Container cosmosContainer,
-            ILogger log)
+            Container cosmosContainer)
         {
             foreach (var reminder in dueReminders)
             {

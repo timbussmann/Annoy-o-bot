@@ -14,7 +14,7 @@ public class When_deleting_reminder_on_default_branch : AcceptanceTest
     {
         var gitHubApi = new FakeGitHubApi();
         var repository = gitHubApi.CreateNewRepository();
-        var handler = new CallbackHandler(gitHubApi, configurationBuilder.Build());
+        var handler = new CallbackHandler(gitHubApi, configurationBuilder.Build(), NullLogger<CallbackHandler>.Instance);
 
         // Create reminder:
         var reminder = new Reminder
@@ -26,14 +26,14 @@ public class When_deleting_reminder_on_default_branch : AcceptanceTest
         var createCallback = repository.CommitNewReminder(reminder);
         var createRequest = CreateCallbackHttpRequest(createCallback);
 
-        await handler.Run(createRequest, container, NullLogger.Instance);
+        await handler.Run(createRequest, container);
 
         // Delete reminder:
         var deleteCommit = CallbackModelHelper.CreateCommitModel(removed: createCallback.HeadCommit.Added[0]);
         var deleteCallback = repository.Commit(deleteCommit);
         var deleteRequest = CreateCallbackHttpRequest(deleteCallback);
 
-        var result = await handler.Run(deleteRequest, container, NullLogger.Instance);
+        var result = await handler.Run(deleteRequest, container);
         
         Assert.IsType<OkResult>(result);
 

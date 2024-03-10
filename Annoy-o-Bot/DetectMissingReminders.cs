@@ -15,10 +15,12 @@ public class DetectMissingReminders
 {
     static readonly CosmosClientWrapper cosmsClientWrapper = new();
     readonly IGitHubApi githubApi;
+    readonly ILogger<DetectMissingReminders> log;
 
-    public DetectMissingReminders(IGitHubApi githubApi)
+    public DetectMissingReminders(IGitHubApi githubApi, ILogger<DetectMissingReminders> log)
     {
         this.githubApi = githubApi;
+        this.log = log;
     }
 
     [Function("DetectMissingReminders")]
@@ -29,8 +31,7 @@ public class DetectMissingReminders
             databaseName: CosmosClientWrapper.dbName,
             containerName: CosmosClientWrapper.collectionId,
             Connection = "CosmosDBConnection")]
-        Container cosmosContainer,
-        ILogger log)
+        Container cosmosContainer)
     {
         var documents = await cosmsClientWrapper.LoadAllReminders(cosmosContainer);
         log.LogInformation($"Loaded {documents.Count} reminders");

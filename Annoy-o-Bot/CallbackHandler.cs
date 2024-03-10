@@ -18,14 +18,16 @@ namespace Annoy_o_Bot
 {
     public class CallbackHandler
     {
-        private readonly IGitHubApi gitHubApi;
-        private readonly IConfiguration configuration;
-        private readonly ICosmosClientWrapper cosmosWrapper;
+        readonly IGitHubApi gitHubApi;
+        readonly IConfiguration configuration;
+        readonly ICosmosClientWrapper cosmosWrapper;
+        readonly ILogger<CallbackHandler> log;
 
-        public CallbackHandler(IGitHubApi gitHubApi, IConfiguration configuration)
+        public CallbackHandler(IGitHubApi gitHubApi, IConfiguration configuration, ILogger<CallbackHandler> log)
         {
             this.gitHubApi = gitHubApi;
             this.configuration = configuration;
+            this.log = log;
             this.cosmosWrapper = new CosmosClientWrapper();
         }
 
@@ -37,8 +39,7 @@ namespace Annoy_o_Bot
                 databaseName: CosmosClientWrapper.dbName,
                 containerName: CosmosClientWrapper.collectionId,
                 Connection = "CosmosDBConnection")]
-            Container cosmosContainer,
-            ILogger log)
+            Container cosmosContainer)
         {
             GitHubHelper.ValidateRequest(req, configuration.GetValue<string>("WebhookSecret") ?? throw new Exception("Missing 'WebhookSecret' env var"), log);
             if (!req.Headers.TryGetValue("X-GitHub-Event", out var callbackEvent) || callbackEvent != "push")

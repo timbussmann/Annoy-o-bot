@@ -23,9 +23,9 @@ public class When_adding_new_reminder_on_non_default_branch : AcceptanceTest
         var callback = appInstallation.CommitNewReminder(reminder, branch: "my-branch");
         var request = CreateCallbackHttpRequest(callback);
 
-        var handler = new CallbackHandler(gitHubApi, configurationBuilder.Build());
+        var handler = new CallbackHandler(gitHubApi, configurationBuilder.Build(), NullLogger<CallbackHandler>.Instance);
 
-        var result = await handler.Run(request, container, NullLogger.Instance);
+        var result = await handler.Run(request, container);
 
         Assert.IsType<OkResult>(result);
 
@@ -55,9 +55,9 @@ public class When_adding_new_reminder_on_non_default_branch : AcceptanceTest
         var request = CreateCallbackHttpRequest(callback);
         appInstallation.AddFileContent(callback.Commits[0].Added[0], "Invalid reminder definition");
 
-        var handler = new CallbackHandler(gitHubApi, configurationBuilder.Build());
+        var handler = new CallbackHandler(gitHubApi, configurationBuilder.Build(), NullLogger<CallbackHandler>.Instance);
 
-        await Assert.ThrowsAnyAsync<Exception>(() => handler.Run(request, container, NullLogger.Instance));
+        await Assert.ThrowsAnyAsync<Exception>(() => handler.Run(request, container));
 
         Assert.Equal(callback.Installation.Id, appInstallation.InstallationId);
         Assert.Equal(callback.Repository.Id, appInstallation.RepositoryId);

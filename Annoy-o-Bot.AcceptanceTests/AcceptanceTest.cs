@@ -62,9 +62,9 @@ public class AcceptanceTest
             reminders.AddRange(readResult.Resource);
         }
 
-        var timeoutHandler = new TimeoutFunction(gitHubApi);
+        var timeoutHandler = new TimeoutFunction(gitHubApi, NullLogger<TimeoutFunction>.Instance);
 
-        await timeoutHandler.Run(null!, reminders, container, NullLogger.Instance);
+        await timeoutHandler.Run(null!, reminders, container);
     }
 
     protected static HttpRequest CreateCallbackHttpRequest(CallbackModel callback)
