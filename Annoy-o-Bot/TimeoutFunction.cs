@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Annoy_o_Bot.CosmosDB;
 using Annoy_o_Bot.GitHub;
 using Microsoft.Azure.Cosmos;
-using Microsoft.Azure.Documents;
 using Microsoft.Extensions.Logging;
 using Octokit;
 using Microsoft.Azure.Functions.Worker;
@@ -37,7 +36,7 @@ namespace Annoy_o_Bot
                 databaseName: CosmosClientWrapper.dbName,
                 containerName: CosmosClientWrapper.collectionId,
                 Connection = "CosmosDBConnection")]
-            Container documentClient,
+            Container cosmosContainer,
             ILogger log)
         {
             foreach (var reminder in dueReminders)
@@ -76,14 +75,14 @@ namespace Annoy_o_Bot
                         log.LogInformation($"Created reminder issue #{issue.Number} based on reminder {reminder.Id}");
 
                         reminder.LastReminder = now;
-                        await cosmosWrapper.AddOrUpdateReminder(documentClient, reminder);
+                        await cosmosWrapper.AddOrUpdateReminder(cosmosContainer, reminder);
                     }
                     else
                     {
                         // Next Reminder might have been reset due to an update, so we will just recalculate it.
                         reminder.CalculateNextReminder(now);
                         log.LogWarning($"Found LastReminder ({reminder.LastReminder:g}) > NextReminder ({reminder.NextReminder:g}) in reminder {reminder.Id}");
-                        await cosmosWrapper.AddOrUpdateReminder(documentClient, reminder);
+                        await cosmosWrapper.AddOrUpdateReminder(cosmosContainer, reminder);
                     }
                 }
                 catch (ApiValidationException validationException)
