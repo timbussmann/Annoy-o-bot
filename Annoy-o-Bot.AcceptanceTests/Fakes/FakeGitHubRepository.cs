@@ -16,7 +16,7 @@ class FakeGitHubRepository : IGitHubRepository
     public List<NewIssue> Issues { get; set; } = new();
 
     private readonly Dictionary<string, string> files = new();
-    
+
     public FakeGitHubRepository(long installationId, long repositoryId)
     {
         InstallationId = installationId;
@@ -26,6 +26,14 @@ class FakeGitHubRepository : IGitHubRepository
     public void AddFileContent(string filePath, string content)
     {
         files[filePath] = content;
+    }
+
+    public Task<IList<(string path, string content)>> ReadAllRemindersFromDefaultBranch()
+    {
+        return Task.FromResult<IList<(string path, string content)>>(files
+            .Where(f => f.Key.StartsWith(".reminders/"))
+            .Select(f => (f.Key, f.Value))
+            .ToList());
     }
 
     public Task<string> ReadFileContent(string filePath, string branchReference)
