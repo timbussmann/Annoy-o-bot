@@ -31,7 +31,8 @@ namespace Annoy_o_Bot
 
         [Function("Callback")]
         public async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
+            [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)]
+            HttpRequest req,
             [CosmosDBInput(
                 databaseName: CosmosClientWrapper.dbName,
                 containerName: CosmosClientWrapper.collectionId,

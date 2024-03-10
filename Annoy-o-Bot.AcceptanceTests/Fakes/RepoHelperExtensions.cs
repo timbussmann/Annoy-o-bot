@@ -11,10 +11,10 @@ static class RepoHelperExtensions
         string? branch = null)
     {
         var filename = Guid.NewGuid().ToString("N");
-        
+
         var commit = CallbackModelHelper.CreateCommitModel(added: $".reminders/{filename}.json");
 
-        repo.AddFileContent(commit.Added[0], JsonConvert.SerializeObject(reminder));
+        repo.AddJsonReminder(commit.Added[0], reminder);
         return repo.Commit(commit, branch);
     }
 
@@ -29,6 +29,11 @@ static class RepoHelperExtensions
             HeadCommit = commit,
             Commits = new []{ commit }
         };
+    }
+
+    public static void AddJsonReminder(this FakeGitHubRepository repo, string filePath, Reminder reminder)
+    {
+        repo.AddFileContent(filePath, JsonConvert.SerializeObject(reminder));
     }
 
 }

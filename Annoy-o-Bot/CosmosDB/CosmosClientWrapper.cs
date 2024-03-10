@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -13,13 +14,23 @@ public class CosmosClientWrapper : ICosmosClientWrapper
 
     public const string ReminderQuery = "SELECT TOP 50 * FROM c WHERE GetCurrentDateTime() >= c.NextReminder ORDER BY c.NextReminder ASC";
 
-    public async Task<ReminderDocument?> LoadReminder(Container cosmosClient, string fileName, long installationId,
-        long repositoryId)
+    public async Task<IList<ReminderDocument>> LoadAllReminders(Container cosmosClient)
+    {
+        var result = new List<ReminderDocument>();
+        var queryFeed = cosmosClient.GetItemQueryIterator<ReminderDocument>();
+        while (queryFeed.HasMoreResults)
+        {
+            var queryResponse = await queryFeed.ReadNextAsync();
+            result.AddRange(queryResponse);
+        }
+
+        return result;
+    }
+
+    public async Task<ReminderDocument?> LoadReminder(Container cosmosClient, string fileName, long installationId, long repositoryId)
     {
         var documentId = BuildDocumentId(fileName, installationId, repositoryId);
-        //UriFactory.CreateDocumentUri(dbName, collectionId, documentId);
 
-        // TODO: Cosmos v3 SDK should allow to check without a try-catch block
         try
         {
             var existingReminder = await cosmosClient.ReadItemAsync<ReminderDocument>(documentId, new PartitionKey(documentId));
