@@ -44,7 +44,7 @@ namespace Annoy_o_Bot
                     // this typically seem to be installation related events.
                     log.LogWarning($"Non-push callback. 'X-GitHub-Event': '{callbackEvent}'");
                 }
-                
+
                 return new OkResult();
             }
 

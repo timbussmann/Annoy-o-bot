@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Octokit;
 
@@ -13,6 +14,12 @@ public class GitHubRepository : IGitHubRepository
     {
         this.repositoryId = repositoryId;
         installationClient = gitHubClient;
+    }
+
+    public async Task<IList<(string path, string content)>> ReadAllRemindersFromDefaultBranch()
+    {
+        var reminders = await installationClient.Repository.Content.GetAllContents(repositoryId, ".reminders");
+        return reminders.Select(content => (content.Path, content.Content)).ToList();
     }
 
     public async Task<string> ReadFileContent(string filePath, string branchReference)

@@ -17,6 +17,11 @@ class FakeGitHubApi : IGitHubApi
         return repository;
     }
 
+    public Task<IGitHubInstallation> GetInstallation(long installationId)
+    {
+        return Task.FromResult<IGitHubInstallation>(new FakeGitHubInstallation(this, installationId));
+    }
+
     public Task<IGitHubRepository> GetRepository(long installationId, long repositoryId)
     {
         return Task.FromResult(registeredRepos[(installationId, repositoryId)]);

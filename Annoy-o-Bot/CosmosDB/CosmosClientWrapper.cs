@@ -15,6 +15,15 @@ public class CosmosClientWrapper : ICosmosClientWrapper
 
     public const string ReminderQuery = "SELECT TOP 50 * FROM c WHERE GetCurrentDateTime() >= c.NextReminder ORDER BY c.NextReminder ASC";
 
+    public Task<IList<ReminderDocument>> LoadAllReminders(IDocumentClient cosmosClient)
+    {
+        var query = cosmosClient
+            .CreateDocumentQuery<ReminderDocument>(UriFactory.CreateDocumentCollectionUri(dbName, collectionId))
+            .ToList();
+
+        return Task.FromResult<IList<ReminderDocument>>(query);
+    }
+
     public async Task<ReminderDocument?> LoadReminder(IDocumentClient cosmosClient, string fileName, long installationId,
         long repositoryId)
     {
