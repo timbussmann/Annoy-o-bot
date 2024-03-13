@@ -25,6 +25,11 @@ namespace Annoy_o_Bot
             }
 
             var hmacsha256 = new HMACSHA256(Encoding.UTF8.GetBytes(secret));
+
+            // enable buffering so we can reset the request body stream position
+            // otherwise this throws a System.NotSupportedException when running in Azure Functions
+            request.EnableBuffering();
+
             var hash = await hmacsha256.ComputeHashAsync(request.Body);
             request.Body.Position = 0;
             var hashString = $"sha256={Convert.ToHexString(hash)}";
