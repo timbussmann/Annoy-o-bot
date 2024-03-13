@@ -1,15 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Annoy_o_Bot.CosmosDB;
 using Annoy_o_Bot.GitHub;
 using Annoy_o_Bot.Parser;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Azure.Documents;
-using Microsoft.Azure.Documents.Client;
-using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.Http;
+using Microsoft.Azure.Cosmos;
+using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 
 namespace Annoy_o_Bot;
@@ -17,23 +14,26 @@ namespace Annoy_o_Bot;
 public class DetectMissingReminders
 {
     static readonly CosmosClientWrapper cosmsClientWrapper = new();
-    IGitHubApi githubApi;
+    readonly IGitHubApi githubApi;
+    readonly ILogger<DetectMissingReminders> log;
 
-    public DetectMissingReminders(IGitHubApi githubApi)
+    public DetectMissingReminders(IGitHubApi githubApi, ILogger<DetectMissingReminders> log)
     {
         this.githubApi = githubApi;
+        this.log = log;
     }
 
-    [FunctionName("DetectMissingReminders")]
+    [Function("DetectMissingReminders")]
     public async Task Run(
         [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)]
         HttpRequest req,
-        [CosmosDB(CosmosClientWrapper.dbName, CosmosClientWrapper.collectionId,
-            ConnectionStringSetting = "CosmosDBConnection")]
-        IDocumentClient documentClient,
-        ILogger log)
+        [CosmosDBInput(
+            databaseName: CosmosClientWrapper.dbName,
+            containerName: CosmosClientWrapper.collectionId,
+            Connection = "CosmosDBConnection")]
+        Container cosmosContainer)
     {
-        var documents = await cosmsClientWrapper.LoadAllReminders(documentClient);
+        var documents = await cosmsClientWrapper.LoadAllReminders(cosmosContainer);
         log.LogInformation($"Loaded {documents.Count} reminders");
 
         var installations = documents.GroupBy(d => d.InstallationId);
@@ -63,7 +63,7 @@ public class DetectMissingReminders
                             continue;
                         }
 
-                        await CreateReminder(file.path, reminder, byRepository.Key, byInstallation.Key, documentClient, log);
+                        await CreateReminder(file.path, reminder, byRepository.Key, byInstallation.Key, cosmosContainer, log);
                     }
                 }
 
@@ -71,7 +71,7 @@ public class DetectMissingReminders
         }
     }
 
-    async Task CreateReminder(string filePath, Reminder reminder, long repositoryId, long installationId, IDocumentClient documentClient, ILogger log)
+    async Task CreateReminder(string filePath, Reminder reminder, long repositoryId, long installationId, Container cosmosContainer, ILogger log)
     {
         var reminderDocument = new ReminderDocument
         {
@@ -82,7 +82,7 @@ public class DetectMissingReminders
             Path = filePath
         };
 
-        await cosmsClientWrapper.AddOrUpdateReminder(documentClient, reminderDocument);
+        await cosmsClientWrapper.AddOrUpdateReminder(cosmosContainer, reminderDocument);
         log.LogInformation($"Created missing reminder for {reminderDocument.InstallationId}/{reminderDocument.RepositoryId}/{reminderDocument.Path}, due {reminderDocument.NextReminder}");
     }
 

@@ -5,38 +5,43 @@ using System.Linq;
 using System.Threading.Tasks;
 using Annoy_o_Bot.CosmosDB;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Azure.Documents;
 using Microsoft.Extensions.Logging;
 using Octokit;
 using Annoy_o_Bot.Parser;
 using Annoy_o_Bot.GitHub;
+using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Azure.Functions.Worker;
 
 namespace Annoy_o_Bot
 {
     public class CallbackHandler
     {
-        private readonly IGitHubApi gitHubApi;
-        private IConfiguration configuration;
-        private ICosmosClientWrapper cosmosWrapper;
+        readonly IGitHubApi gitHubApi;
+        readonly IConfiguration configuration;
+        readonly ICosmosClientWrapper cosmosWrapper;
+        readonly ILogger<CallbackHandler> log;
 
-        public CallbackHandler(IGitHubApi gitHubApi, IConfiguration configuration)
+        public CallbackHandler(IGitHubApi gitHubApi, IConfiguration configuration, ILogger<CallbackHandler> log)
         {
             this.gitHubApi = gitHubApi;
             this.configuration = configuration;
+            this.log = log;
             this.cosmosWrapper = new CosmosClientWrapper();
         }
 
-        [FunctionName("Callback")]
+        [Function("Callback")]
         public async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
-            [CosmosDB(CosmosClientWrapper.dbName, CosmosClientWrapper.collectionId, ConnectionStringSetting = "CosmosDBConnection")]IDocumentClient documentClient,
-            ILogger log)
+            [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)]
+            HttpRequest req,
+            [CosmosDBInput(
+                databaseName: CosmosClientWrapper.dbName,
+                containerName: CosmosClientWrapper.collectionId,
+                Connection = "CosmosDBConnection")]
+            Container cosmosContainer)
         {
-            GitHubHelper.ValidateRequest(req, configuration.GetValue<string>("WebhookSecret") ?? throw new Exception("Missing 'WebhookSecret' env var"), log);
+            await GitHubHelper.ValidateRequest(req, configuration.GetValue<string>("WebhookSecret") ?? throw new Exception("Missing 'WebhookSecret' env var"), log);
             if (!req.Headers.TryGetValue("X-GitHub-Event", out var callbackEvent) || callbackEvent != "push")
             {
                 if (callbackEvent != "check_suite") // ignore check_suite events
@@ -84,7 +89,7 @@ namespace Annoy_o_Bot
                         Path = fileName
                     };
 
-                    await cosmosWrapper.AddOrUpdateReminder(documentClient, reminderDocument);
+                    await cosmosWrapper.AddOrUpdateReminder(cosmosContainer, reminderDocument);
                     await githubClient.CreateComment(requestObject.HeadCommit.Id,
                         $"Created reminder '{reminder.Title}' for {reminder.Date:D}");
                 }
@@ -92,7 +97,7 @@ namespace Annoy_o_Bot
                 var updatedReminders = await LoadReminder(reminderChanges.Updated, requestObject, githubClient);
                 foreach (var (fileName, updatedReminder) in updatedReminders)
                 {
-                    var existingReminder = await cosmosWrapper.LoadReminder(documentClient, fileName, requestObject.Installation.Id, requestObject.Repository.Id);
+                    var existingReminder = await cosmosWrapper.LoadReminder(cosmosContainer, fileName, requestObject.Installation.Id, requestObject.Repository.Id);
 
                     existingReminder!.Reminder = updatedReminder;
                     // recalculate next reminder due time from scratch:
@@ -103,12 +108,12 @@ namespace Annoy_o_Bot
                         existingReminder.CalculateNextReminder(DateTime.Now);
                     }
 
-                    await cosmosWrapper.AddOrUpdateReminder(documentClient, existingReminder);
+                    await cosmosWrapper.AddOrUpdateReminder(cosmosContainer, existingReminder);
                     await githubClient.CreateComment(requestObject.HeadCommit.Id,
                         $"Updated reminder '{updatedReminder.Title}' for {existingReminder.NextReminder:D}");
                 }
 
-                await DeleteRemovedReminders(fileChanges.Deleted, documentClient, log, requestObject, githubClient);
+                await DeleteRemovedReminders(fileChanges.Deleted, cosmosContainer, log, requestObject, githubClient);
             }
             else
             {
@@ -196,7 +201,7 @@ namespace Annoy_o_Bot
             return results;
         }
 
-        async Task DeleteRemovedReminders(ICollection<string> deletedFiles, IDocumentClient documentClient, ILogger log, CallbackModel requestObject, IGitHubRepository client)
+        async Task DeleteRemovedReminders(ICollection<string> deletedFiles, Container documentClient, ILogger log, CallbackModel requestObject, IGitHubRepository client)
         {
             foreach (var deletedReminder in deletedFiles)
             {

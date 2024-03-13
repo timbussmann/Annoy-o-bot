@@ -1,8 +1,6 @@
-﻿using System.Collections.ObjectModel;
-using System.Net;
+﻿using System.Net;
 using Annoy_o_Bot.AcceptanceTests;
-using Microsoft.Azure.Documents;
-using Microsoft.Azure.Documents.Client;
+using Microsoft.Azure.Cosmos;
 using Xunit;
 
 namespace Annoy_o_Bot.CosmosDB.Tests;
@@ -11,7 +9,7 @@ public class CosmosWrapperTests : IClassFixture<CosmosFixture>
 {
     private CosmosFixture cosmosFixture;
 
-    private DocumentClient DocumentClient;
+    private Container DocumentClient;
 
     public CosmosWrapperTests(CosmosFixture cosmosFixture)
     {
@@ -19,11 +17,9 @@ public class CosmosWrapperTests : IClassFixture<CosmosFixture>
         DocumentClient = cosmosFixture.CreateDocumentClient();
         try
         {
-            DocumentClient.DeleteDocumentCollectionAsync(
-                UriFactory.CreateDocumentCollectionUri(CosmosClientWrapper.dbName, CosmosClientWrapper.collectionId),
-                new RequestOptions() { }).GetAwaiter().GetResult();
+            DocumentClient.DeleteContainerAsync().GetAwaiter().GetResult();
         }
-        catch (DocumentClientException e)
+        catch (CosmosException e)
         {
             if (e.StatusCode != HttpStatusCode.NotFound)
             {
@@ -31,13 +27,7 @@ public class CosmosWrapperTests : IClassFixture<CosmosFixture>
             }
         }
 
-        DocumentClient.CreateDocumentCollectionAsync(UriFactory.CreateDatabaseUri(CosmosClientWrapper.dbName),
-            new DocumentCollection()
-            {
-                Id = CosmosClientWrapper.collectionId,
-                PartitionKey = new PartitionKeyDefinition() { Paths = new Collection<string>() { "/id" } }
-            }).GetAwaiter().GetResult();
-
+        DocumentClient.Database.CreateContainerAsync(new ContainerProperties(CosmosClientWrapper.collectionId, "/id")).GetAwaiter().GetResult();
     }
 
     [Fact]
@@ -50,9 +40,9 @@ public class CosmosWrapperTests : IClassFixture<CosmosFixture>
     }
 
     [Fact]
-    public void GetDueReminders_should_return_empty_collection_when_no_reminders()
+    public async Task GetDueReminders_should_return_empty_collection_when_no_reminders()
     {
-        var result = ExecuteReminderQuery();
+        var result = await ExecuteReminderQuery();
 
         Assert.Empty(result);
     }
@@ -69,7 +59,7 @@ public class CosmosWrapperTests : IClassFixture<CosmosFixture>
             Path = "file/path.txt"
         });
 
-        var result = ExecuteReminderQuery();
+        var result = await ExecuteReminderQuery();
 
         Assert.Empty(result);
     }
@@ -86,7 +76,7 @@ public class CosmosWrapperTests : IClassFixture<CosmosFixture>
             Path = "file/path.txt"
         });
 
-        var result = ExecuteReminderQuery();
+        var result = await ExecuteReminderQuery();
 
         Assert.Empty(result);
     }
@@ -104,19 +94,21 @@ public class CosmosWrapperTests : IClassFixture<CosmosFixture>
         };
         await wrapper.AddOrUpdateReminder(DocumentClient, existingReminder);
 
-        var result = ExecuteReminderQuery().ToList().Single();
+        var result = (await ExecuteReminderQuery()).Single();
 
         Assert.Equivalent(existingReminder, result);
     }
 
-    IQueryable<ReminderDocument> ExecuteReminderQuery()
+    async Task<List<ReminderDocument>> ExecuteReminderQuery()
     {
-        var documentCollectionUri =
-            UriFactory.CreateDocumentCollectionUri(CosmosClientWrapper.dbName, CosmosClientWrapper.collectionId);
-        var result = DocumentClient.CreateDocumentQuery<ReminderDocument>(
-            documentCollectionUri,
-            CosmosClientWrapper.ReminderQuery,
-            new FeedOptions { EnableCrossPartitionQuery = true });
-        return result;
+        var queryIterator = DocumentClient.GetItemQueryIterator<ReminderDocument>(CosmosClientWrapper.ReminderQuery);
+        List<ReminderDocument> reminders = new();
+        while (queryIterator.HasMoreResults)
+        {
+            var readResult = await queryIterator.ReadNextAsync();
+            reminders.AddRange(readResult.Resource);
+        }
+
+        return reminders;
     }
 }

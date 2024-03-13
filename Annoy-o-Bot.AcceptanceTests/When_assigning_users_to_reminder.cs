@@ -24,8 +24,8 @@ public class When_assigning_users_to_reminder : AcceptanceTest
         var callback = repository.CommitNewReminder(reminder);
         var request = CreateCallbackHttpRequest(callback);
 
-        var handler = new CallbackHandler(gitHubApi, configurationBuilder.Build());
-        var result = await handler.Run(request, documentClient, NullLogger.Instance);
+        var handler = new CallbackHandler(gitHubApi, configurationBuilder.Build(), NullLogger<CallbackHandler>.Instance);
+        var result = await handler.Run(request, container);
 
         Assert.IsType<OkResult>(result);
         await CreateDueReminders(gitHubApi);
@@ -49,8 +49,8 @@ public class When_assigning_users_to_reminder : AcceptanceTest
         var callback = repository.CommitNewReminder(reminder);
         var request = CreateCallbackHttpRequest(callback);
 
-        var handler = new CallbackHandler(gitHubApi, configurationBuilder.Build());
-        var result = await handler.Run(request, documentClient, NullLogger.Instance);
+        var handler = new CallbackHandler(gitHubApi, configurationBuilder.Build(), NullLogger<CallbackHandler>.Instance);
+        var result = await handler.Run(request, container);
 
         Assert.IsType<OkResult>(result);
         await CreateDueReminders(gitHubApi);
