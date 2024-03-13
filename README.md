@@ -11,15 +11,13 @@ The file supports the following properties:
 
 | Property | Type | Required | Description |
 | --- | --- | --- | --- |
-| title | string | mandatory | The title of the issue being created. |
-| message | string | mandatory | The issue description for the issue being created. See https://yaml-multiline.info/ on how to create multi-line reminder messages using YAML. |
-| labels | string array | optional | An array of labels to add |
-| assignee | string | optional | A `;` deliminited list of users/teams being assigned to the issue. |
-| date | string | mandatory | A [ISO 8601 standard](http://en.wikipedia.org/wiki/ISO_8601) date string indicating when the issue should be created the first time. |
-| interval | string | mandatory | Defines the interval granularity in which a new issue should be created after the first date. See [interval description](#intervals) for more detail. |
-| intervalStep | digit | optional | Defines how many intervals should be used before raising the next issue. This allows to customize intervals to something like "every 3 months", "every second week" and so on. |
-
-(when using YAML, start the property name with an upper case as shown in the examples below)
+| Title | string | mandatory | The title of the issue being created. |
+| Message | string | mandatory | The issue description for the issue being created. See https://yaml-multiline.info/ on how to create multi-line reminder messages using YAML. |
+| Labels | string array | optional | An array of labels to add |
+| Assignee | string | optional | A `;` deliminited list of users/teams being assigned to the issue. |
+| Date | string | mandatory | A [ISO 8601 standard](http://en.wikipedia.org/wiki/ISO_8601) date string indicating when the issue should be created the first time. |
+| Interval | string | mandatory | Defines the interval granularity in which a new issue should be created after the first date. See [interval description](#intervals) for more detail. |
+| IntervalStep | digit | optional | Defines how many intervals should be used before raising the next issue. This allows to customize intervals to something like "every 3 months", "every second week" and so on. |
 
 ### Intervals
 
@@ -38,6 +36,9 @@ Labels:
 Date: 2020-01-01
 Interval: Monthly
 ```
+
+> [!IMPORTANT]
+> The YAML parser is case-sensitive. Make sure to use the documented property names.
 
 As JSON: `.reminders/demo-reminder.json`
 ```json  
