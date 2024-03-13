@@ -41,7 +41,7 @@ namespace Annoy_o_Bot
                 Connection = "CosmosDBConnection")]
             Container cosmosContainer)
         {
-            GitHubHelper.ValidateRequest(req, configuration.GetValue<string>("WebhookSecret") ?? throw new Exception("Missing 'WebhookSecret' env var"), log);
+            await GitHubHelper.ValidateRequest(req, configuration.GetValue<string>("WebhookSecret") ?? throw new Exception("Missing 'WebhookSecret' env var"), log);
             if (!req.Headers.TryGetValue("X-GitHub-Event", out var callbackEvent) || callbackEvent != "push")
             {
                 if (callbackEvent != "check_suite") // ignore check_suite events

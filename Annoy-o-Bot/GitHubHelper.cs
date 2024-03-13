@@ -17,7 +17,7 @@ namespace Annoy_o_Bot
         /// <summary>
         /// Validates whether the request is indeed coming from GitHub using the webhook secret.
         /// </summary>
-        public static void ValidateRequest(HttpRequest request, string secret, ILogger logger)
+        public static async Task ValidateRequest(HttpRequest request, string secret, ILogger logger)
         {
             if (!request.Headers.TryGetValue("X-Hub-Signature-256", out var sha256Signature))
             {
@@ -25,10 +25,10 @@ namespace Annoy_o_Bot
             }
 
             var hmacsha256 = new HMACSHA256(Encoding.UTF8.GetBytes(secret));
-            var hash = hmacsha256.ComputeHash(request.Body);
+            var hash = await hmacsha256.ComputeHashAsync(request.Body);
             request.Body.Position = 0;
             var hashString = $"sha256={Convert.ToHexString(hash)}";
-            
+
             if (!string.Equals(sha256Signature, hashString, StringComparison.OrdinalIgnoreCase))
             {
                 logger.LogWarning($"Validation mismatch. {Environment.MachineName}, {Environment.OSVersion}, {Environment.Version}, {RuntimeInformation.RuntimeIdentifier}, {RuntimeInformation.OSArchitecture}, {RuntimeInformation.OSDescription}, {RuntimeInformation.FrameworkDescription}, {RuntimeInformation.ProcessArchitecture}");
