@@ -80,18 +80,7 @@ namespace Annoy_o_Bot
                 var newReminders = await LoadReminder(reminderChanges.New, requestObject, githubClient);
                 foreach (var (fileName, reminder) in newReminders)
                 {
-                    var reminderDocument = new ReminderDocument
-                    {
-                        InstallationId = requestObject.Installation.Id,
-                        RepositoryId = requestObject.Repository.Id,
-                        Reminder = reminder,
-                        NextReminder = new DateTime(reminder.Date.Ticks, DateTimeKind.Utc),
-                        Path = fileName
-                    };
-
-                    await cosmosWrapper.AddOrUpdateReminder(cosmosContainer, reminderDocument);
-                    await githubClient.CreateComment(requestObject.HeadCommit.Id,
-                        $"Created reminder '{reminder.Title}' for {reminder.Date:D}");
+                    await CreateNewReminder(cosmosContainer, requestObject, reminder, fileName, githubClient);
                 }
 
                 var updatedReminders = await LoadReminder(reminderChanges.Updated, requestObject, githubClient);
@@ -100,22 +89,23 @@ namespace Annoy_o_Bot
                     var existingReminder = await cosmosWrapper.LoadReminder(cosmosContainer, fileName, requestObject.Installation.Id, requestObject.Repository.Id);
                     if (existingReminder is null)
                     {
-                        log.LogError("Unable to load reminder document {reminder} for existing reminder", fileName);
-                        continue;
+                        await CreateNewReminder(cosmosContainer, requestObject, updatedReminder, fileName, githubClient);
                     }
-
-                    existingReminder!.Reminder = updatedReminder;
-                    // recalculate next reminder due time from scratch:
-                    existingReminder.NextReminder = new DateTime(updatedReminder.Date.Ticks, DateTimeKind.Utc);
-                    if (existingReminder.LastReminder >= existingReminder.NextReminder)
+                    else
                     {
-                        // reminder start date is in the past, re-calculate next reminder due date with interval based on new start date.
-                        existingReminder.CalculateNextReminder(DateTime.Now);
-                    }
+                        existingReminder!.Reminder = updatedReminder;
+                        // recalculate next reminder due time from scratch:
+                        existingReminder.NextReminder = new DateTime(updatedReminder.Date.Ticks, DateTimeKind.Utc);
+                        if (existingReminder.LastReminder >= existingReminder.NextReminder)
+                        {
+                            // reminder start date is in the past, re-calculate next reminder due date with interval based on new start date.
+                            existingReminder.CalculateNextReminder(DateTime.Now);
+                        }
 
-                    await cosmosWrapper.AddOrUpdateReminder(cosmosContainer, existingReminder);
-                    await githubClient.CreateComment(requestObject.HeadCommit.Id,
-                        $"Updated reminder '{updatedReminder.Title}' for {existingReminder.NextReminder:D}");
+                        await cosmosWrapper.AddOrUpdateReminder(cosmosContainer, existingReminder);
+                        await githubClient.CreateComment(requestObject.HeadCommit.Id,
+                            $"Updated reminder '{updatedReminder.Title}' for {existingReminder.NextReminder:D}");
+                    }
                 }
 
                 await DeleteRemovedReminders(fileChanges.Deleted, cosmosContainer, requestObject, githubClient);
@@ -154,6 +144,23 @@ namespace Annoy_o_Bot
             }
 
             return new OkResult();
+        }
+
+        async Task CreateNewReminder(Container cosmosContainer, CallbackModel requestObject, Reminder reminder, string fileName,
+            IGitHubRepository githubClient)
+        {
+            var reminderDocument = new ReminderDocument
+            {
+                InstallationId = requestObject.Installation.Id,
+                RepositoryId = requestObject.Repository.Id,
+                Reminder = reminder,
+                NextReminder = new DateTime(reminder.Date.Ticks, DateTimeKind.Utc),
+                Path = fileName
+            };
+
+            await cosmosWrapper.AddOrUpdateReminder(cosmosContainer, reminderDocument);
+            await githubClient.CreateComment(requestObject.HeadCommit.Id,
+                $"Created reminder '{reminder.Title}' for {reminder.Date:D}");
         }
 
         private static async Task<CallbackModel> ParseRequest(HttpRequest req, ILogger log)
