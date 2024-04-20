@@ -68,11 +68,13 @@ namespace Annoy_o_Bot
         public static async Task<GitHubClient> GetInstallationClient(long installationId)
         {
             // Use GitHubJwt library to create the GitHubApp Jwt Token using our private certificate PEM file
+            var appIntegrationId = Convert.ToInt32(Environment.GetEnvironmentVariable("GitHubAppId"));
+            var environmentVariablePrivateKeySource = new EnvironmentVariablePrivateKeySource("PrivateKey");
             var generator = new GitHubJwtFactory(
-                new EnvironmentVariablePrivateKeySource("PrivateKey"),
+                environmentVariablePrivateKeySource,
                 new GitHubJwtFactoryOptions
                 {
-                    AppIntegrationId = Convert.ToInt32(Environment.GetEnvironmentVariable("GitHubAppId")),
+                    AppIntegrationId = appIntegrationId,
                     ExpirationSeconds = 600 // 10 minutes is the maximum time allowed
                 }
             );
