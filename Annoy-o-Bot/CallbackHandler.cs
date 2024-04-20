@@ -98,6 +98,11 @@ namespace Annoy_o_Bot
                 foreach (var (fileName, updatedReminder) in updatedReminders)
                 {
                     var existingReminder = await cosmosWrapper.LoadReminder(cosmosContainer, fileName, requestObject.Installation.Id, requestObject.Repository.Id);
+                    if (existingReminder is null)
+                    {
+                        log.LogError("Unable to load reminder document {reminder} for existing reminder", fileName);
+                        continue;
+                    }
 
                     existingReminder!.Reminder = updatedReminder;
                     // recalculate next reminder due time from scratch:
@@ -113,7 +118,7 @@ namespace Annoy_o_Bot
                         $"Updated reminder '{updatedReminder.Title}' for {existingReminder.NextReminder:D}");
                 }
 
-                await DeleteRemovedReminders(fileChanges.Deleted, cosmosContainer, log, requestObject, githubClient);
+                await DeleteRemovedReminders(fileChanges.Deleted, cosmosContainer, requestObject, githubClient);
             }
             else
             {
@@ -201,7 +206,7 @@ namespace Annoy_o_Bot
             return results;
         }
 
-        async Task DeleteRemovedReminders(ICollection<string> deletedFiles, Container documentClient, ILogger log, CallbackModel requestObject, IGitHubRepository client)
+        async Task DeleteRemovedReminders(ICollection<string> deletedFiles, Container documentClient, CallbackModel requestObject, IGitHubRepository client)
         {
             foreach (var deletedReminder in deletedFiles)
             {
