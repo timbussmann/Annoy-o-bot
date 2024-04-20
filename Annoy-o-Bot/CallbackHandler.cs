@@ -93,7 +93,7 @@ namespace Annoy_o_Bot
                     }
                     else
                     {
-                        existingReminder!.Reminder = updatedReminder;
+                        existingReminder.Reminder = updatedReminder;
                         // recalculate next reminder due time from scratch:
                         existingReminder.NextReminder = new DateTime(updatedReminder.Date.Ticks, DateTimeKind.Utc);
                         if (existingReminder.LastReminder >= existingReminder.NextReminder)
