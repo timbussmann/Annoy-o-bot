@@ -36,7 +36,7 @@ public class GitHubRepository : IGitHubRepository
 
     public async Task<string> ReadFileContent(string filePath, string? branchReference)
     {
-        IReadOnlyList<RepositoryContent>? contents;
+        IReadOnlyList<RepositoryContent> contents;
 
         if (branchReference == null)
         {

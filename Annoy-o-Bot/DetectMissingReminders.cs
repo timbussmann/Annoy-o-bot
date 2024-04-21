@@ -45,8 +45,19 @@ public class DetectMissingReminders
             {
                 var repository = await installationClient.GetRepository(byRepository.Key);
                 var exisingReminderFilePaths = byRepository.Select(r => r.Path).ToHashSet();
-                var reminderPath = await repository.ReadAllRemindersFromDefaultBranch();
-                foreach (var filePath in reminderPath)
+                var reminderPaths = await repository.ReadAllRemindersFromDefaultBranch();
+
+                // Check for reminder documents with no definition
+                foreach (var existingReminder in exisingReminderFilePaths)
+                {
+                    if (!reminderPaths.Contains(existingReminder))
+                    {
+                        log.LogWarning("Couldn't find reminder definition on GitHub for reminder with path '{path}' in repository '{repoId}'", existingReminder, byRepository.Key);
+                    }
+                }
+
+                // Check for reminder definitions with no reminder document
+                foreach (var filePath in reminderPaths)
                 {
                     if (!exisingReminderFilePaths.Contains(filePath))
                     {
