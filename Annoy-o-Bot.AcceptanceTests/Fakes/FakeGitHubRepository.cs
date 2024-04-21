@@ -22,17 +22,17 @@ class FakeGitHubRepository(long installationId, long repositoryId) : IGitHubRepo
         files[filePath] = content;
     }
 
-    public Task<IList<(string path, string content)>> ReadAllRemindersFromDefaultBranch()
+    public Task<IList<string>> ReadAllRemindersFromDefaultBranch()
     {
         var reminders = files
             .Where(f => f.Key.StartsWith(".reminders/"))
-            .Select(f => (f.Key, f.Value))
+            .Select(f => f.Key)
             .ToList();
 
-        return Task.FromResult<IList<(string path, string content)>>(reminders);
+        return Task.FromResult<IList<string>>(reminders);
     }
 
-    public Task<string> ReadFileContent(string filePath, string branchReference)
+    public Task<string> ReadFileContent(string filePath, string? branchReference)
     {
         return Task.FromResult(files[filePath]);
     }

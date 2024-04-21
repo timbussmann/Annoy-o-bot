@@ -44,26 +44,28 @@ public class DetectMissingReminders
             foreach (var byRepository in byInstallation.GroupBy(i => i.RepositoryId))
             {
                 var repository = await installationClient.GetRepository(byRepository.Key);
-                var files = await repository.ReadAllRemindersFromDefaultBranch();
-                foreach ((string path, string content) file in files)
+                var exisingReminderFilePaths = byRepository.Select(r => r.Path).ToHashSet();
+                var reminderPath = await repository.ReadAllRemindersFromDefaultBranch();
+                foreach (var filePath in reminderPath)
                 {
-                    if (!byRepository.Any(reminder => reminder.Path == file.path))
+                    if (!exisingReminderFilePaths.Contains(filePath))
                     {
-                        log.LogError(
-                            $"Missing reminder {file.path} in repository {byRepository.Key} (installation {byInstallation.Key})");
+                        log.LogError($"Missing reminder {filePath} in repository {byRepository.Key} (installation {byInstallation.Key})");
 
+                        string reminderDefinition = string.Empty;
                         Reminder reminder;
                         try
                         {
-                            reminder = LoadReminder(file.path, file.content);
+                            reminderDefinition = await repository.ReadFileContent(filePath);
+                            reminder = LoadReminder(filePath, reminderDefinition);
                         }
                         catch (Exception e)
                         {
-                            log.LogError(e, "Unable to parse reminder {path}. Reminder definition: '{reminderContent}'", file.path, file.content);
+                            log.LogError(e, "Unable to parse reminder {path}. Reminder definition: '{reminderContent}'", filePath, reminderDefinition);
                             continue;
                         }
 
-                        await CreateReminder(file.path, reminder, byRepository.Key, byInstallation.Key, cosmosContainer, log);
+                        await CreateReminder(filePath, reminder, byRepository.Key, byInstallation.Key, cosmosContainer, log);
                     }
                 }
 
