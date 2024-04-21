@@ -3,11 +3,11 @@ using Octokit;
 
 namespace Annoy_o_Bot.AcceptanceTests.Fakes;
 
-class FakeGitHubRepository : IGitHubRepository
+class FakeGitHubRepository(long installationId, long repositoryId) : IGitHubRepository
 {
-    public long InstallationId { get; private set; }
+    public long InstallationId { get; private set; } = installationId;
 
-    public long RepositoryId { get; private set; }
+    public long RepositoryId { get; private set; } = repositoryId;
 
     public List<(string commitId, string comment)> Comments { get; set; } = new();
 
@@ -17,26 +17,22 @@ class FakeGitHubRepository : IGitHubRepository
 
     private readonly Dictionary<string, string> files = new();
 
-    public FakeGitHubRepository(long installationId, long repositoryId)
-    {
-        InstallationId = installationId;
-        RepositoryId = repositoryId;
-    }
-
     public void AddFileContent(string filePath, string content)
     {
         files[filePath] = content;
     }
 
-    public Task<IList<(string path, string content)>> ReadAllRemindersFromDefaultBranch()
+    public Task<IList<string>> ReadAllRemindersFromDefaultBranch()
     {
-        return Task.FromResult<IList<(string path, string content)>>(files
+        var reminders = files
             .Where(f => f.Key.StartsWith(".reminders/"))
-            .Select(f => (f.Key, f.Value))
-            .ToList());
+            .Select(f => f.Key)
+            .ToList();
+
+        return Task.FromResult<IList<string>>(reminders);
     }
 
-    public Task<string> ReadFileContent(string filePath, string branchReference)
+    public Task<string> ReadFileContent(string filePath, string? branchReference)
     {
         return Task.FromResult(files[filePath]);
     }

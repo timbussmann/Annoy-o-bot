@@ -22,9 +22,63 @@ namespace Annoy_o_Bot.Tests.Parser
         readonly JsonReminderParser jsonReminderParser = new JsonReminderParser();
 
         [Fact]
-        void Should_parse_reminder_correctly()
+        void Should_parse_serialized_reminder_correctly()
         {
             var input = JsonConvert.SerializeObject(reminder);
+
+            var result = jsonReminderParser.Parse(input);
+
+            Assert.Equal("The title", result.Title);
+            Assert.Equal("A message", result.Message);
+            Assert.Equal("SomeUserHandle;AnotherUserHandle", result.Assignee);
+            Assert.Equal(Interval.Monthly, result.Interval);
+            Assert.Equal(5, result.IntervalStep);
+            Assert.Equal(new DateTime(2010, 11, 12), reminder.Date);
+            Assert.Contains("Label1", result.Labels);
+            Assert.Contains("Label2", result.Labels);
+        }
+
+        [Fact]
+        void Should_parse_reminder_using_lowercase_properties_correctly()
+        {
+            var input = """
+                        {
+                            "title":"The title",
+                            "message":"A message",
+                            "assignee":"SomeUserHandle;AnotherUserHandle",
+                            "labels":["Label1","Label2"],
+                            "date":"2010-11-12T00:00:00",
+                            "interval":3,
+                            "intervalStep":5
+                        }
+                        """;
+
+            var result = jsonReminderParser.Parse(input);
+
+            Assert.Equal("The title", result.Title);
+            Assert.Equal("A message", result.Message);
+            Assert.Equal("SomeUserHandle;AnotherUserHandle", result.Assignee);
+            Assert.Equal(Interval.Monthly, result.Interval);
+            Assert.Equal(5, result.IntervalStep);
+            Assert.Equal(new DateTime(2010, 11, 12), reminder.Date);
+            Assert.Contains("Label1", result.Labels);
+            Assert.Contains("Label2", result.Labels);
+        }
+
+        [Fact]
+        void Should_parse_reminder_using_uppercase_properties_correctly()
+        {
+            var input = """
+                        {
+                            "Title":"The title",
+                            "Message":"A message",
+                            "Assignee":"SomeUserHandle;AnotherUserHandle",
+                            "Labels":["Label1","Label2"],
+                            "Date":"2010-11-12T00:00:00",
+                            "Interval":3,
+                            "IntervalStep":5
+                        }
+                        """;
 
             var result = jsonReminderParser.Parse(input);
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using Annoy_o_Bot.CosmosDB;
 using Xunit;
 
 namespace Annoy_o_Bot.Tests

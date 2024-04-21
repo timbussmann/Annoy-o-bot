@@ -1,15 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Annoy_o_Bot.CosmosDB;
 using Annoy_o_Bot.GitHub;
 using Annoy_o_Bot.Parser;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Azure.Documents;
-using Microsoft.Azure.Documents.Client;
-using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.Http;
+using Microsoft.Azure.Cosmos;
+using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 
 namespace Annoy_o_Bot;
@@ -17,23 +14,26 @@ namespace Annoy_o_Bot;
 public class DetectMissingReminders
 {
     static readonly CosmosClientWrapper cosmsClientWrapper = new();
-    IGitHubApi githubApi;
+    readonly IGitHubApi githubApi;
+    readonly ILogger<DetectMissingReminders> log;
 
-    public DetectMissingReminders(IGitHubApi githubApi)
+    public DetectMissingReminders(IGitHubApi githubApi, ILogger<DetectMissingReminders> log)
     {
         this.githubApi = githubApi;
+        this.log = log;
     }
 
-    [FunctionName("DetectMissingReminders")]
+    [Function("DetectMissingReminders")]
     public async Task Run(
         [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)]
         HttpRequest req,
-        [CosmosDB(CosmosClientWrapper.dbName, CosmosClientWrapper.collectionId,
-            ConnectionStringSetting = "CosmosDBConnection")]
-        IDocumentClient documentClient,
-        ILogger log)
+        [CosmosDBInput(
+            databaseName: CosmosClientWrapper.dbName,
+            containerName: CosmosClientWrapper.collectionId,
+            Connection = "CosmosDBConnection")]
+        Container cosmosContainer)
     {
-        var documents = await cosmsClientWrapper.LoadAllReminders(documentClient);
+        var documents = await cosmsClientWrapper.LoadAllReminders(cosmosContainer);
         log.LogInformation($"Loaded {documents.Count} reminders");
 
         var installations = documents.GroupBy(d => d.InstallationId);
@@ -44,26 +44,39 @@ public class DetectMissingReminders
             foreach (var byRepository in byInstallation.GroupBy(i => i.RepositoryId))
             {
                 var repository = await installationClient.GetRepository(byRepository.Key);
-                var files = await repository.ReadAllRemindersFromDefaultBranch();
-                foreach ((string path, string content) file in files)
-                {
-                    if (!byRepository.Any(reminder => reminder.Path == file.path))
-                    {
-                        log.LogError(
-                            $"Missing reminder {file.path} in repository {byRepository.Key} (installation {byInstallation.Key})");
+                var exisingReminderFilePaths = byRepository.Select(r => r.Path).ToHashSet();
+                var reminderPaths = await repository.ReadAllRemindersFromDefaultBranch();
 
+                // Check for reminder documents with no definition
+                foreach (var existingReminder in exisingReminderFilePaths)
+                {
+                    if (!reminderPaths.Contains(existingReminder))
+                    {
+                        log.LogWarning("Couldn't find reminder definition on GitHub for reminder with path '{path}' in repository '{repoId}'", existingReminder, byRepository.Key);
+                    }
+                }
+
+                // Check for reminder definitions with no reminder document
+                foreach (var filePath in reminderPaths)
+                {
+                    if (!exisingReminderFilePaths.Contains(filePath))
+                    {
+                        log.LogError($"Missing reminder {filePath} in repository {byRepository.Key} (installation {byInstallation.Key})");
+
+                        string reminderDefinition = string.Empty;
                         Reminder reminder;
                         try
                         {
-                            reminder = LoadReminder(file.path, file.content);
+                            reminderDefinition = await repository.ReadFileContent(filePath);
+                            reminder = LoadReminder(filePath, reminderDefinition);
                         }
                         catch (Exception e)
                         {
-                            log.LogError(e, "Unable to parse reminder {path}", file.path);
+                            log.LogError(e, "Unable to parse reminder {path}. Reminder definition: '{reminderContent}'", filePath, reminderDefinition);
                             continue;
                         }
 
-                        await CreateReminder(file.path, reminder, byRepository.Key, byInstallation.Key, documentClient, log);
+                        await CreateReminder(filePath, reminder, byRepository.Key, byInstallation.Key, cosmosContainer, log);
                     }
                 }
 
@@ -71,7 +84,7 @@ public class DetectMissingReminders
         }
     }
 
-    async Task CreateReminder(string filePath, Reminder reminder, long repositoryId, long installationId, IDocumentClient documentClient, ILogger log)
+    async Task CreateReminder(string filePath, Reminder reminder, long repositoryId, long installationId, Container cosmosContainer, ILogger log)
     {
         var reminderDocument = new ReminderDocument
         {
@@ -82,7 +95,7 @@ public class DetectMissingReminders
             Path = filePath
         };
 
-        await cosmsClientWrapper.AddOrUpdateReminder(documentClient, reminderDocument);
+        await cosmsClientWrapper.AddOrUpdateReminder(cosmosContainer, reminderDocument);
         log.LogInformation($"Created missing reminder for {reminderDocument.InstallationId}/{reminderDocument.RepositoryId}/{reminderDocument.Path}, due {reminderDocument.NextReminder}");
     }
 

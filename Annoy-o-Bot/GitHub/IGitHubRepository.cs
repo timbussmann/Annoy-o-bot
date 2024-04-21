@@ -6,9 +6,9 @@ namespace Annoy_o_Bot.GitHub;
 
 public interface IGitHubRepository
 {
-    Task<IList<(string path, string content)>> ReadAllRemindersFromDefaultBranch();
+    Task<IList<string>> ReadAllRemindersFromDefaultBranch();
 
-    Task<string> ReadFileContent(string filePath, string branchReference);
+    Task<string> ReadFileContent(string filePath, string? branchReference = null);
 
     Task CreateCheckRun(NewCheckRun checkRun);
 

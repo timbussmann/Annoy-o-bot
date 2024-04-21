@@ -1,29 +1,22 @@
-﻿using System.Collections.ObjectModel;
-using System.Net;
+﻿using System.Net;
 using Annoy_o_Bot.AcceptanceTests;
-using Microsoft.Azure.Documents;
-using Microsoft.Azure.Documents.Client;
+using Microsoft.Azure.Cosmos;
 using Xunit;
 
 namespace Annoy_o_Bot.CosmosDB.Tests;
 
 public class CosmosWrapperTests : IClassFixture<CosmosFixture>
 {
-    private CosmosFixture cosmosFixture;
-
-    private DocumentClient DocumentClient;
+    Container DocumentClient;
 
     public CosmosWrapperTests(CosmosFixture cosmosFixture)
     {
-        this.cosmosFixture = cosmosFixture;
         DocumentClient = cosmosFixture.CreateDocumentClient();
         try
         {
-            DocumentClient.DeleteDocumentCollectionAsync(
-                UriFactory.CreateDocumentCollectionUri(CosmosClientWrapper.dbName, CosmosClientWrapper.collectionId),
-                new RequestOptions() { }).GetAwaiter().GetResult();
+            DocumentClient.DeleteContainerAsync().GetAwaiter().GetResult();
         }
-        catch (DocumentClientException e)
+        catch (CosmosException e)
         {
             if (e.StatusCode != HttpStatusCode.NotFound)
             {
@@ -31,13 +24,7 @@ public class CosmosWrapperTests : IClassFixture<CosmosFixture>
             }
         }
 
-        DocumentClient.CreateDocumentCollectionAsync(UriFactory.CreateDatabaseUri(CosmosClientWrapper.dbName),
-            new DocumentCollection()
-            {
-                Id = CosmosClientWrapper.collectionId,
-                PartitionKey = new PartitionKeyDefinition() { Paths = new Collection<string>() { "/id" } }
-            }).GetAwaiter().GetResult();
-
+        DocumentClient.Database.CreateContainerAsync(new ContainerProperties(CosmosClientWrapper.collectionId, "/id")).GetAwaiter().GetResult();
     }
 
     [Fact]
@@ -50,9 +37,9 @@ public class CosmosWrapperTests : IClassFixture<CosmosFixture>
     }
 
     [Fact]
-    public void GetDueReminders_should_return_empty_collection_when_no_reminders()
+    public async Task GetDueReminders_should_return_empty_collection_when_no_reminders()
     {
-        var result = ExecuteReminderQuery();
+        var result = await ExecuteReminderQuery();
 
         Assert.Empty(result);
     }
@@ -66,10 +53,11 @@ public class CosmosWrapperTests : IClassFixture<CosmosFixture>
             NextReminder = DateTime.UtcNow.AddMinutes(1),
             InstallationId = Random.Shared.NextInt64(),
             RepositoryId = Random.Shared.NextInt64(),
-            Path = "file/path.txt"
+            Path = "file/path.txt",
+            Reminder = new Reminder()
         });
 
-        var result = ExecuteReminderQuery();
+        var result = await ExecuteReminderQuery();
 
         Assert.Empty(result);
     }
@@ -83,10 +71,11 @@ public class CosmosWrapperTests : IClassFixture<CosmosFixture>
             NextReminder = null,
             InstallationId = Random.Shared.NextInt64(),
             RepositoryId = Random.Shared.NextInt64(),
-            Path = "file/path.txt"
+            Path = "file/path.txt",
+            Reminder = new Reminder()
         });
 
-        var result = ExecuteReminderQuery();
+        var result = await ExecuteReminderQuery();
 
         Assert.Empty(result);
     }
@@ -100,23 +89,88 @@ public class CosmosWrapperTests : IClassFixture<CosmosFixture>
             NextReminder = DateTime.UtcNow.AddMinutes(-1),
             InstallationId = Random.Shared.NextInt64(),
             RepositoryId = Random.Shared.NextInt64(),
-            Path = "file/path.txt"
+            Path = "file/path.txt",
+            Reminder = new Reminder()
         };
         await wrapper.AddOrUpdateReminder(DocumentClient, existingReminder);
 
-        var result = ExecuteReminderQuery().ToList().Single();
+        var result = (await ExecuteReminderQuery()).Single();
 
         Assert.Equivalent(existingReminder, result);
     }
 
-    IQueryable<ReminderDocument> ExecuteReminderQuery()
+    [Fact]
+    public async Task AddOrUpdateReminder_should_create_missing_reminder()
     {
-        var documentCollectionUri =
-            UriFactory.CreateDocumentCollectionUri(CosmosClientWrapper.dbName, CosmosClientWrapper.collectionId);
-        var result = DocumentClient.CreateDocumentQuery<ReminderDocument>(
-            documentCollectionUri,
-            CosmosClientWrapper.ReminderQuery,
-            new FeedOptions { EnableCrossPartitionQuery = true });
-        return result;
+        var wrapper = new CosmosClientWrapper();
+        var existingReminder = new ReminderDocument
+        {
+            LastReminder = new DateTime(2010, 10, 10),
+            NextReminder = new DateTime(2012, 12, 12),
+            InstallationId = Random.Shared.NextInt64(),
+            RepositoryId = Random.Shared.NextInt64(),
+            Path = "file/path.txt",
+            Reminder = new Reminder()
+            {
+                Assignee = "demo assignee",
+                Date = DateTime.MinValue,
+                Interval = Interval.Monthly,
+                IntervalStep = 4,
+                Labels = new[] {"label1", "label2"},
+                Title = "demo title"
+            }
+        };
+
+        await wrapper.AddOrUpdateReminder(DocumentClient, existingReminder);
+        var storedReminder = await wrapper.LoadReminder(DocumentClient, existingReminder.Path, existingReminder.InstallationId,
+            existingReminder.RepositoryId);
+
+        Assert.Equivalent(existingReminder, storedReminder);
+    }
+
+    [Fact]
+    public async Task AddOrUpdateReminder_should_update_existing_reminder()
+    {
+        var wrapper = new CosmosClientWrapper();
+        var existingReminder = new ReminderDocument
+        {
+            LastReminder = new DateTime(2010, 10, 10),
+            NextReminder = new DateTime(2012, 12, 12),
+            InstallationId = Random.Shared.NextInt64(),
+            RepositoryId = Random.Shared.NextInt64(),
+            Path = "file/path.txt",
+            Reminder = new Reminder()
+            {
+                Assignee = "demo assignee",
+                Date = DateTime.MinValue,
+                Interval = Interval.Monthly,
+                IntervalStep = 4,
+                Labels = new[] { "label1", "label2" },
+                Title = "demo title"
+            }
+        };
+
+        await wrapper.AddOrUpdateReminder(DocumentClient, existingReminder);
+
+        existingReminder.Reminder.Title = "updated title";
+        await wrapper.AddOrUpdateReminder(DocumentClient, existingReminder);
+
+        var updatedReminder = await wrapper.LoadReminder(DocumentClient, existingReminder.Path, existingReminder.InstallationId,
+            existingReminder.RepositoryId);
+
+        Assert.Equivalent(existingReminder, updatedReminder);
+    }
+
+    async Task<List<ReminderDocument>> ExecuteReminderQuery()
+    {
+        var queryIterator = DocumentClient.GetItemQueryIterator<ReminderDocument>(CosmosClientWrapper.ReminderQuery);
+        List<ReminderDocument> reminders = new();
+        while (queryIterator.HasMoreResults)
+        {
+            var readResult = await queryIterator.ReadNextAsync();
+            reminders.AddRange(readResult.Resource);
+        }
+
+        return reminders;
     }
 }

@@ -17,7 +17,7 @@ namespace Annoy_o_Bot
         /// <summary>
         /// Validates whether the request is indeed coming from GitHub using the webhook secret.
         /// </summary>
-        public static void ValidateRequest(HttpRequest request, string secret, ILogger logger)
+        public static async Task ValidateRequest(HttpRequest request, string secret, ILogger logger)
         {
             if (!request.Headers.TryGetValue("X-Hub-Signature-256", out var sha256Signature))
             {
@@ -25,10 +25,15 @@ namespace Annoy_o_Bot
             }
 
             var hmacsha256 = new HMACSHA256(Encoding.UTF8.GetBytes(secret));
-            var hash = hmacsha256.ComputeHash(request.Body);
+
+            // enable buffering so we can reset the request body stream position
+            // otherwise this throws a System.NotSupportedException when running in Azure Functions
+            request.EnableBuffering();
+
+            var hash = await hmacsha256.ComputeHashAsync(request.Body);
             request.Body.Position = 0;
             var hashString = $"sha256={Convert.ToHexString(hash)}";
-            
+
             if (!string.Equals(sha256Signature, hashString, StringComparison.OrdinalIgnoreCase))
             {
                 logger.LogWarning($"Validation mismatch. {Environment.MachineName}, {Environment.OSVersion}, {Environment.Version}, {RuntimeInformation.RuntimeIdentifier}, {RuntimeInformation.OSArchitecture}, {RuntimeInformation.OSDescription}, {RuntimeInformation.FrameworkDescription}, {RuntimeInformation.ProcessArchitecture}");
@@ -63,11 +68,13 @@ namespace Annoy_o_Bot
         public static async Task<GitHubClient> GetInstallationClient(long installationId)
         {
             // Use GitHubJwt library to create the GitHubApp Jwt Token using our private certificate PEM file
+            var appIntegrationId = Convert.ToInt32(Environment.GetEnvironmentVariable("GitHubAppId"));
+            var environmentVariablePrivateKeySource = new EnvironmentVariablePrivateKeySource("PrivateKey");
             var generator = new GitHubJwtFactory(
-                new EnvironmentVariablePrivateKeySource("PrivateKey"),
+                environmentVariablePrivateKeySource,
                 new GitHubJwtFactoryOptions
                 {
-                    AppIntegrationId = Convert.ToInt32(Environment.GetEnvironmentVariable("GitHubAppId")),
+                    AppIntegrationId = appIntegrationId,
                     ExpirationSeconds = 600 // 10 minutes is the maximum time allowed
                 }
             );

@@ -1,14 +1,18 @@
 using System;
+using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 
-namespace Annoy_o_Bot
+namespace Annoy_o_Bot.CosmosDB
 {
-    public class ReminderDocument : ICloneable
+    public class ReminderDocument
     {
+
         // assigning null using the null-forgiving operator because the value will always be set
-        [JsonProperty("id")]
-        public string? Id { get; set; } = null!;
-        public Reminder Reminder { get; set; } = null!;
+        //[JsonProperty("id")] Newtonsoft no longer used
+        [JsonPropertyName("id")]
+        public string Id { get; set; } = null!;
+
+        public required Reminder Reminder { get; set; }
         public long InstallationId { get; set; }
         public long RepositoryId { get; set; }
         public DateTime LastReminder { get; set; }
@@ -51,11 +55,6 @@ namespace Annoy_o_Bot
                 }
                 return next;
             }
-        }
-
-        public object Clone()
-        {
-            return this.MemberwiseClone();
         }
     }
 }

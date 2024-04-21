@@ -1,7 +1,7 @@
 ﻿using Annoy_o_Bot.AcceptanceTests.Fakes;
-using Microsoft.AspNetCore.Http.Internal;
+using Annoy_o_Bot.CosmosDB;
+using Annoy_o_Bot.CosmosDB.Tests;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
@@ -10,12 +10,12 @@ namespace Annoy_o_Bot.AcceptanceTests;
 public class When_detecting_missing_reminder : AcceptanceTest
 {
     [Fact]
-    public async Task Should_create_missing_reminders()
+    public async Task Should_create_missing_reminder_documents()
     {
         var gitHubApi = new FakeGitHubApi();
         var repository = gitHubApi.CreateNewRepository();
-        var handler = new CallbackHandler(gitHubApi, configurationBuilder.Build());
-        var testee = new DetectMissingReminders(gitHubApi);
+        var handler = new CallbackHandler(gitHubApi, configurationBuilder.Build(), NullLogger<CallbackHandler>.Instance);
+        var testee = new DetectMissingReminders(gitHubApi, NullLogger<DetectMissingReminders>.Instance);
 
         var missingReminder = new Reminder()
         {
@@ -25,7 +25,7 @@ public class When_detecting_missing_reminder : AcceptanceTest
         };
         repository.AddJsonReminder(".reminders/missingReminder.json", missingReminder);
 
-        // Create existing reminder:
+        // Create existing reminder because there needs to be at least one known reminder for an installation so that we can identify the installation:
         var reminder = new Reminder
         {
             Title = "Some title for the reminder",
@@ -34,14 +34,16 @@ public class When_detecting_missing_reminder : AcceptanceTest
         };
         var createCallback = repository.CommitNewReminder(reminder);
         var createRequest = CreateCallbackHttpRequest(createCallback);
-        await handler.Run(createRequest, documentClient, NullLogger.Instance);
+        await handler.Run(createRequest, container);
 
-        await testee.Run(new DefaultHttpRequest(new DefaultHttpContext()), documentClient, NullLogger.Instance);
+        await testee.Run(new DefaultHttpContext().Request, container);
 
-        await CreateDueReminders(gitHubApi);
+        var cosmosWrapper = new CosmosClientWrapper();
+        var allReminders = await cosmosWrapper.LoadAllReminders(container);
 
-         var issue = Assert.Single(repository.Issues);
-        Assert.Equal(missingReminder.Title, issue.Title);
+        Assert.Equal(2, allReminders.Count);
+        Assert.True(allReminders.Any(reminder => reminder.Path == ".reminders/missingReminder.json"));
+        Assert.True(allReminders.Any(reminder => reminder.Path == createCallback.HeadCommit.Added[0]));
     }
 
     public When_detecting_missing_reminder(CosmosFixture cosmosFixture) : base(cosmosFixture)

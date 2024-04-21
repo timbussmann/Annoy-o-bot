@@ -1,13 +1,10 @@
-﻿using System.Collections.ObjectModel;
-using System.Net;
+﻿using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using Annoy_o_Bot.CosmosDB;
 using Annoy_o_Bot.GitHub;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Internal;
-using Microsoft.Azure.Documents;
-using Microsoft.Azure.Documents.Client;
+using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json;
@@ -22,7 +19,7 @@ public class AcceptanceTest
 
     protected ConfigurationBuilder configurationBuilder;
 
-    protected DocumentClient documentClient;
+    protected Container container;
 
     public AcceptanceTest(CosmosFixture cosmosFixture)
     {
@@ -32,19 +29,18 @@ public class AcceptanceTest
             { "WebhookSecret", SignatureKey }
         });
 
-        documentClient = cosmosFixture.CreateDocumentClient();
+        container = cosmosFixture.CreateDocumentClient();
         SetupCollection().GetAwaiter().GetResult();
     }
 
     async Task SetupCollection()
     {
+        var database = container.Database;
         try
         {
-            await documentClient.DeleteDocumentCollectionAsync(
-                UriFactory.CreateDocumentCollectionUri(CosmosClientWrapper.dbName, CosmosClientWrapper.collectionId),
-                new RequestOptions() { });
+            await database.GetContainer(CosmosClientWrapper.collectionId).DeleteContainerAsync();
         }
-        catch (DocumentClientException e)
+        catch (CosmosException e)
         {
             if (e.StatusCode != HttpStatusCode.NotFound)
             {
@@ -52,30 +48,29 @@ public class AcceptanceTest
             }
         }
 
-        await documentClient.CreateDocumentCollectionAsync(UriFactory.CreateDatabaseUri(CosmosClientWrapper.dbName),
-            new DocumentCollection()
-            {
-                Id = CosmosClientWrapper.collectionId,
-                PartitionKey = new PartitionKeyDefinition() { Paths = new Collection<string>() { "/id" } }
-            });
+        await database.CreateContainerAsync(CosmosClientWrapper.collectionId, "/id");
     }
 
     protected async Task CreateDueReminders(IGitHubApi gitHubApi)
     {
-        var timeoutHandler = new TimeoutFunction(gitHubApi);
+        var queryIterator = container
+            .GetItemQueryIterator<ReminderDocument>(CosmosClientWrapper.ReminderQuery);
+        List<ReminderDocument> reminders = new();
+        while (queryIterator.HasMoreResults)
+        {
+            var readResult = await queryIterator.ReadNextAsync();
+            reminders.AddRange(readResult.Resource);
+        }
 
-        var documentCollectionUri = UriFactory.CreateDocumentCollectionUri(CosmosClientWrapper.dbName, CosmosClientWrapper.collectionId);
-        var result = documentClient.CreateDocumentQuery<ReminderDocument>(
-            documentCollectionUri,
-            CosmosClientWrapper.ReminderQuery,
-            new FeedOptions { EnableCrossPartitionQuery = true });
+        var timeoutHandler = new TimeoutFunction(gitHubApi, NullLogger<TimeoutFunction>.Instance);
 
-        await timeoutHandler.Run(null!, result, documentClient, NullLogger.Instance);
+        await timeoutHandler.Run(null!, reminders, container);
     }
 
     protected static HttpRequest CreateCallbackHttpRequest(CallbackModel callback)
     {
-        HttpRequest request = new DefaultHttpRequest(new DefaultHttpContext());
+        var httpContext = new DefaultHttpContext();
+        var request = httpContext.Request;
         var messageContent = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(callback, Formatting.None));
         request.Body = new MemoryStream(messageContent);
         request.Headers.Add("X-GitHub-Event", "push");

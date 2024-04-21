@@ -18,8 +18,8 @@ public class When_callback_type_not_push : AcceptanceTest
         var request = CreateCallbackHttpRequest(callback);
         request.Headers["X-GitHub-Event"] = "yolo";
 
-        var handler = new CallbackHandler(gitHubApi, configurationBuilder.Build());
-        var result = await handler.Run(request, documentClient, NullLogger.Instance);
+        var handler = new CallbackHandler(gitHubApi, configurationBuilder.Build(), NullLogger<CallbackHandler>.Instance);
+        var result = await handler.Run(request, container);
 
         Assert.IsType<OkResult>(result);
     }

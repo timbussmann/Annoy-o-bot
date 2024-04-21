@@ -4,35 +4,41 @@ using System.Linq;
 using System.Threading.Tasks;
 using Annoy_o_Bot.CosmosDB;
 using Annoy_o_Bot.GitHub;
-using Microsoft.Azure.Documents;
-using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Logging;
 using Octokit;
+using Microsoft.Azure.Functions.Worker;
 
 namespace Annoy_o_Bot
 {
     public class TimeoutFunction
     {
-        private readonly IGitHubApi gitHubApi;
-        private readonly ICosmosClientWrapper cosmosWrapper;
+        readonly IGitHubApi gitHubApi;
+        readonly ICosmosClientWrapper cosmosWrapper;
+        readonly ILogger<TimeoutFunction> log;
 
-        public TimeoutFunction(IGitHubApi gitHubApi)
+        public TimeoutFunction(IGitHubApi gitHubApi, ILogger<TimeoutFunction> log)
         {
             this.gitHubApi = gitHubApi;
+            this.log = log;
             this.cosmosWrapper = new CosmosClientWrapper();
         }
 
-        [FunctionName("TimeoutFunction")]
+        [Function("TimeoutFunction")]
         public async Task Run(
             //[HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
             [TimerTrigger("0 */10 * * * *", RunOnStartup = false)]TimerInfo timer, // once every 10 minutes
-            [CosmosDB(CosmosClientWrapper.dbName,
-                CosmosClientWrapper.collectionId,
-                ConnectionStringSetting = "CosmosDBConnection",
+            [CosmosDBInput(
+                databaseName: CosmosClientWrapper.dbName,
+                containerName: CosmosClientWrapper.collectionId,
+                Connection = "CosmosDBConnection",
                 SqlQuery = CosmosClientWrapper.ReminderQuery)]
             IEnumerable<ReminderDocument> dueReminders,
-            [CosmosDB(CosmosClientWrapper.dbName, CosmosClientWrapper.collectionId, ConnectionStringSetting = "CosmosDBConnection")] IDocumentClient documentClient,
-            ILogger log)
+            [CosmosDBInput(
+                databaseName: CosmosClientWrapper.dbName,
+                containerName: CosmosClientWrapper.collectionId,
+                Connection = "CosmosDBConnection")]
+            Container cosmosContainer)
         {
             foreach (var reminder in dueReminders)
             {
@@ -64,20 +70,20 @@ namespace Annoy_o_Bot
 
                         log.LogDebug($"Scheduling next due date for reminder {reminder.Id} for {reminder.NextReminder}");
 
-                        var installationClient = await gitHubApi.GetRepository(reminder.InstallationId, reminder.RepositoryId);
-                        var issue = await installationClient.CreateIssue(newIssue);
+                        var repository = await gitHubApi.GetRepository(reminder.InstallationId, reminder.RepositoryId);
+                        var issue = await repository.CreateIssue(newIssue);
 
                         log.LogInformation($"Created reminder issue #{issue.Number} based on reminder {reminder.Id}");
 
                         reminder.LastReminder = now;
-                        await cosmosWrapper.AddOrUpdateReminder(documentClient, reminder);
+                        await cosmosWrapper.AddOrUpdateReminder(cosmosContainer, reminder);
                     }
                     else
                     {
                         // Next Reminder might have been reset due to an update, so we will just recalculate it.
                         reminder.CalculateNextReminder(now);
                         log.LogWarning($"Found LastReminder ({reminder.LastReminder:g}) > NextReminder ({reminder.NextReminder:g}) in reminder {reminder.Id}");
-                        await cosmosWrapper.AddOrUpdateReminder(documentClient, reminder);
+                        await cosmosWrapper.AddOrUpdateReminder(cosmosContainer, reminder);
                     }
                 }
                 catch (ApiValidationException validationException)
