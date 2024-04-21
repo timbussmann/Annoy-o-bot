@@ -59,7 +59,7 @@ public class DetectMissingReminders
                         }
                         catch (Exception e)
                         {
-                            log.LogError(e, "Unable to parse reminder {path}", file.path);
+                            log.LogError(e, "Unable to parse reminder {path}. Reminder definition: '{reminderContent}'", file.path, file.content);
                             continue;
                         }
 
