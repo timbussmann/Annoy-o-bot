@@ -17,6 +17,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\Annoy-o-Bot.CosmosDB.Tests\Annoy-o-Bot.CosmosDB.Tests.csproj" />
         <ProjectReference Include="..\Annoy-o-Bot\Annoy-o-Bot.csproj" />
     </ItemGroup>
 

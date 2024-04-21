@@ -29,7 +29,7 @@ public class AcceptanceTest
             { "WebhookSecret", SignatureKey }
         });
 
-        container = cosmosFixture.CreateDocumentClient().GetContainer(CosmosClientWrapper.dbName, CosmosClientWrapper.collectionId);
+        container = cosmosFixture.CreateDocumentClient();
         SetupCollection().GetAwaiter().GetResult();
     }
 
