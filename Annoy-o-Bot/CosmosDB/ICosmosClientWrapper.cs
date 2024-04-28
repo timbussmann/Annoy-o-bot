@@ -7,8 +7,8 @@ namespace Annoy_o_Bot.CosmosDB;
 
 public interface ICosmosClientWrapper
 {
-    Task<IList<ReminderDocument>> LoadAllReminders(Container cosmosClient);
-    Task<ReminderDocument?> LoadReminder(Container cosmosClient, string fileName, long installationId, long repositoryId);
-    Task Delete(Container cosmosClient, string fileName, long installationId, long repositoryId);
-    Task AddOrUpdateReminder(Container cosmosClient, ReminderDocument reminderDocument);
+    Task<IList<ReminderDocument>> LoadAllReminders();
+    Task<ReminderDocument?> LoadReminder(string fileName, long installationId, long repositoryId);
+    Task Delete(string fileName, long installationId, long repositoryId);
+    Task AddOrUpdateReminder(ReminderDocument reminderDocument);
 }

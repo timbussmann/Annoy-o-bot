@@ -38,8 +38,8 @@ public class When_detecting_missing_reminder : AcceptanceTest
 
         await testee.Run(new DefaultHttpContext().Request, container);
 
-        var cosmosWrapper = new CosmosClientWrapper();
-        var allReminders = await cosmosWrapper.LoadAllReminders(container);
+        var cosmosWrapper = new CosmosClientWrapper(container);
+        var allReminders = await cosmosWrapper.LoadAllReminders();
 
         Assert.Equal(2, allReminders.Count);
         Assert.True(allReminders.Any(reminder => reminder.Path == ".reminders/missingReminder.json"));

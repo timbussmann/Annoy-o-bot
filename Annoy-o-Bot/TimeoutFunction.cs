@@ -13,8 +13,6 @@ namespace Annoy_o_Bot
 {
     public class TimeoutFunction(IGitHubApi gitHubApi, ILogger<TimeoutFunction> log)
     {
-        readonly ICosmosClientWrapper cosmosWrapper = new CosmosClientWrapper();
-
         [Function("TimeoutFunction")]
         public async Task Run(
             //[HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
@@ -31,6 +29,8 @@ namespace Annoy_o_Bot
                 Connection = "CosmosDBConnection")]
             Container cosmosContainer)
         {
+            var cosmosWrapper = new CosmosClientWrapper(cosmosContainer);
+
             foreach (var reminderDocument in dueReminders)
             {
                 try
@@ -54,14 +54,14 @@ namespace Annoy_o_Bot
                         log.LogInformation($"Created reminder issue #{issue.Number} based on reminder {reminderDocument.Id}");
 
                         reminderDocument.LastReminder = now;
-                        await cosmosWrapper.AddOrUpdateReminder(cosmosContainer, reminderDocument);
+                        await cosmosWrapper.AddOrUpdateReminder(reminderDocument);
                     }
                     else
                     {
                         // Next Reminder might have been reset due to an update, so we will just recalculate it.
                         reminderDocument.CalculateNextReminder(now);
                         log.LogWarning($"Found LastReminder ({reminderDocument.LastReminder:g}) > NextReminder ({reminderDocument.NextReminder:g}) in reminder {reminderDocument.Id}");
-                        await cosmosWrapper.AddOrUpdateReminder(cosmosContainer, reminderDocument);
+                        await cosmosWrapper.AddOrUpdateReminder(reminderDocument);
                     }
                 }
                 catch (ApiValidationException validationException)
