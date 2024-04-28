@@ -100,7 +100,7 @@ namespace Annoy_o_Bot.Tests
             var reminder = new ReminderDocument
             {
                 NextReminder = DateTime.Parse(nextReminder),
-                Reminder = new Reminder
+                Reminder = new ReminderDefinition
                 {
                     Interval = interval,
                     IntervalStep = intervalStep

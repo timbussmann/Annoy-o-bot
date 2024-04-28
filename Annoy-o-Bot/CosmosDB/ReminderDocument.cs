@@ -12,7 +12,7 @@ namespace Annoy_o_Bot.CosmosDB
         [JsonPropertyName("id")]
         public string Id { get; set; } = null!;
 
-        public required Reminder Reminder { get; set; }
+        public required ReminderDefinition Reminder { get; set; }
         public long InstallationId { get; set; }
         public long RepositoryId { get; set; }
         public DateTime LastReminder { get; set; }

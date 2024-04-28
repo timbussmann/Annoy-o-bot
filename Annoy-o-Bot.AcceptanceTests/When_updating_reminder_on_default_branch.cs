@@ -17,7 +17,7 @@ public class When_updating_reminder_on_default_branch : AcceptanceTest
         var handler = new CallbackHandler(gitHubApi, configurationBuilder.Build(), NullLogger<CallbackHandler>.Instance);
 
         // Create reminder:
-        var initialReminder = new Reminder
+        var initialReminder = new ReminderDefinition
         {
             Title = "Some title for the reminder",
             Date = DateTime.UtcNow.AddYears(5),
@@ -29,7 +29,7 @@ public class When_updating_reminder_on_default_branch : AcceptanceTest
         await handler.Run(createRequest, container);
 
         // Update reminder:
-        var updatedReminder = new Reminder
+        var updatedReminder = new ReminderDefinition
         {
             Title = "Updated title for the reminder",
             Date = DateTime.UtcNow.AddDays(-1),

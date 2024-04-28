@@ -17,7 +17,7 @@ public class When_detecting_missing_reminder : AcceptanceTest
         var handler = new CallbackHandler(gitHubApi, configurationBuilder.Build(), NullLogger<CallbackHandler>.Instance);
         var testee = new DetectMissingReminders(gitHubApi, NullLogger<DetectMissingReminders>.Instance);
 
-        var missingReminder = new Reminder()
+        var missingReminder = new ReminderDefinition()
         {
             Title = "A forgotten reminder",
             Date = DateTime.UtcNow.AddDays(-1),
@@ -26,7 +26,7 @@ public class When_detecting_missing_reminder : AcceptanceTest
         repository.AddJsonReminder(".reminders/missingReminder.json", missingReminder);
 
         // Create existing reminder because there needs to be at least one known reminder for an installation so that we can identify the installation:
-        var reminder = new Reminder
+        var reminder = new ReminderDefinition
         {
             Title = "Some title for the reminder",
             Date = DateTime.UtcNow.AddDays(100),

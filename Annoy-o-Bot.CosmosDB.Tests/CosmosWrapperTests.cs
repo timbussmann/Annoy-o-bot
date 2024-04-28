@@ -54,7 +54,7 @@ public class CosmosWrapperTests : IClassFixture<CosmosFixture>
             InstallationId = Random.Shared.NextInt64(),
             RepositoryId = Random.Shared.NextInt64(),
             Path = "file/path.txt",
-            Reminder = new Reminder()
+            Reminder = new ReminderDefinition()
         });
 
         var result = await ExecuteReminderQuery();
@@ -72,7 +72,7 @@ public class CosmosWrapperTests : IClassFixture<CosmosFixture>
             InstallationId = Random.Shared.NextInt64(),
             RepositoryId = Random.Shared.NextInt64(),
             Path = "file/path.txt",
-            Reminder = new Reminder()
+            Reminder = new ReminderDefinition()
         });
 
         var result = await ExecuteReminderQuery();
@@ -90,7 +90,7 @@ public class CosmosWrapperTests : IClassFixture<CosmosFixture>
             InstallationId = Random.Shared.NextInt64(),
             RepositoryId = Random.Shared.NextInt64(),
             Path = "file/path.txt",
-            Reminder = new Reminder()
+            Reminder = new ReminderDefinition()
         };
         await wrapper.AddOrUpdateReminder(DocumentClient, existingReminder);
 
@@ -110,7 +110,7 @@ public class CosmosWrapperTests : IClassFixture<CosmosFixture>
             InstallationId = Random.Shared.NextInt64(),
             RepositoryId = Random.Shared.NextInt64(),
             Path = "file/path.txt",
-            Reminder = new Reminder()
+            Reminder = new ReminderDefinition()
             {
                 Assignee = "demo assignee",
                 Date = DateTime.MinValue,
@@ -139,7 +139,7 @@ public class CosmosWrapperTests : IClassFixture<CosmosFixture>
             InstallationId = Random.Shared.NextInt64(),
             RepositoryId = Random.Shared.NextInt64(),
             Path = "file/path.txt",
-            Reminder = new Reminder()
+            Reminder = new ReminderDefinition()
             {
                 Assignee = "demo assignee",
                 Date = DateTime.MinValue,

@@ -12,7 +12,7 @@ public class When_assigning_labels : AcceptanceTest
     {
         var gitHubApi = new FakeGitHubApi();
         var repository = gitHubApi.CreateNewRepository();
-        var reminder = new Reminder
+        var reminder = new ReminderDefinition
         {
             Title = "Some title for the new reminder",
             Date = DateTime.UtcNow.AddDays(-1),

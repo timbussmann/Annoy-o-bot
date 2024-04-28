@@ -1,4 +1,6 @@
-﻿namespace Annoy_o_Bot.Tests
+﻿using Annoy_o_Bot.GitHub;
+
+namespace Annoy_o_Bot.Tests
 {
     using System.Collections.Generic;
     using Xunit;

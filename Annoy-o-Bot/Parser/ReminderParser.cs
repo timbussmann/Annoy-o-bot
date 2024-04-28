@@ -19,6 +19,6 @@ namespace Annoy_o_Bot.Parser
             };
         }
 
-        public abstract Reminder Parse(string documentContent);
+        public abstract ReminderDefinition Parse(string documentContent);
     }
 }

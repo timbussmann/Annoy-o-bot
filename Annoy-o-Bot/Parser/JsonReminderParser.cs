@@ -5,9 +5,9 @@ namespace Annoy_o_Bot.Parser;
 
 public class JsonReminderParser : ReminderParser
 {
-    public override Reminder Parse(string documentContent)
+    public override ReminderDefinition Parse(string documentContent)
     {
-        var reminder = JsonConvert.DeserializeObject<Reminder>(documentContent);
+        var reminder = JsonConvert.DeserializeObject<ReminderDefinition>(documentContent);
 
         if (string.IsNullOrWhiteSpace(reminder.Title))
         {

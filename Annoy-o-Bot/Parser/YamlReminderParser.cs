@@ -5,10 +5,10 @@ namespace Annoy_o_Bot.Parser;
 
 public class YamlReminderParser : ReminderParser
 {
-    public override Reminder Parse(string documentContent)
+    public override ReminderDefinition Parse(string documentContent)
     {
         var deserializer = new Deserializer();
-        var reminder = deserializer.Deserialize<Reminder>(documentContent);
+        var reminder = deserializer.Deserialize<ReminderDefinition>(documentContent);
 
         if (string.IsNullOrWhiteSpace(reminder.Title))
         {

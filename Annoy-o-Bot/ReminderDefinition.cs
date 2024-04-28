@@ -2,7 +2,7 @@ using System;
 
 namespace Annoy_o_Bot
 {
-    public class Reminder
+    public class ReminderDefinition
     {
         public string Title { get; set; } = null!;
         public string? Message { get; set; }

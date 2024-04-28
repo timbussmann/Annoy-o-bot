@@ -16,7 +16,7 @@ public class When_updating_reminder_not_stored : AcceptanceTest
         var handler = new CallbackHandler(gitHubApi, configurationBuilder.Build(), NullLogger<CallbackHandler>.Instance);
 
         // Update reminder:
-        var updatedReminder = new Reminder
+        var updatedReminder = new ReminderDefinition
         {
             Title = "Updated title for the reminder",
             Date = DateTime.UtcNow.AddDays(-1),

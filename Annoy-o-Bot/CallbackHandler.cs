@@ -112,7 +112,7 @@ namespace Annoy_o_Bot
             }
             else
             {
-                List<(string, Reminder)> newReminders;
+                List<(string, ReminderDefinition)> newReminders;
                 try
                 {
                     newReminders = await LoadReminder(reminderChanges.New, requestObject, githubClient);
@@ -146,21 +146,21 @@ namespace Annoy_o_Bot
             return new OkResult();
         }
 
-        async Task CreateNewReminder(Container cosmosContainer, CallbackModel requestObject, Reminder reminder, string fileName,
+        async Task CreateNewReminder(Container cosmosContainer, CallbackModel requestObject, ReminderDefinition reminderDefinition, string fileName,
             IGitHubRepository githubClient)
         {
             var reminderDocument = new ReminderDocument
             {
                 InstallationId = requestObject.Installation.Id,
                 RepositoryId = requestObject.Repository.Id,
-                Reminder = reminder,
-                NextReminder = new DateTime(reminder.Date.Ticks, DateTimeKind.Utc),
+                Reminder = reminderDefinition,
+                NextReminder = new DateTime(reminderDefinition.Date.Ticks, DateTimeKind.Utc),
                 Path = fileName
             };
 
             await cosmosWrapper.AddOrUpdateReminder(cosmosContainer, reminderDocument);
             await githubClient.CreateComment(requestObject.HeadCommit.Id,
-                $"Created reminder '{reminder.Title}' for {reminder.Date:D}");
+                $"Created reminder '{reminderDefinition.Title}' for {reminderDefinition.Date:D}");
         }
 
         private static async Task<CallbackModel> ParseRequest(HttpRequest req, ILogger log)
@@ -193,9 +193,9 @@ namespace Annoy_o_Bot
             }
         }
 
-        static async Task<List<(string, Reminder)>> LoadReminder(ICollection<string> filePaths, CallbackModel requestObject, IGitHubRepository installationClient)
+        static async Task<List<(string, ReminderDefinition)>> LoadReminder(ICollection<string> filePaths, CallbackModel requestObject, IGitHubRepository installationClient)
         {
-            var results = new List<(string, Reminder)>(filePaths.Count); // potentially lower but never higher than number of files
+            var results = new List<(string, ReminderDefinition)>(filePaths.Count); // potentially lower but never higher than number of files
             foreach (var filePath in filePaths)
             {
                 var parser = ReminderParser.GetParser(filePath);
