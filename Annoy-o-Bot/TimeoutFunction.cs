@@ -53,20 +53,7 @@ namespace Annoy_o_Bot
                     {
                         reminder.CalculateNextReminder(now);
 
-                        var newIssue = new NewIssue(reminder.Reminder.Title)
-                        {
-                            Body = reminder.Reminder.Message,
-                        };
-                        foreach (var assignee in reminder.Reminder.Assignee?.Split(';',
-                                     StringSplitOptions.RemoveEmptyEntries) ?? Enumerable.Empty<string>())
-                        {
-                            newIssue.Assignees.Add(assignee);
-                        }
-
-                        foreach (var label in reminder.Reminder.Labels)
-                        {
-                            newIssue.Labels.Add(label);
-                        }
+                        var newIssue = reminder.Reminder.ToGitHubIssue();
 
                         log.LogDebug($"Scheduling next due date for reminder {reminder.Id} for {reminder.NextReminder}");
 
