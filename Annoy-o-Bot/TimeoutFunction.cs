@@ -11,18 +11,9 @@ using Microsoft.Azure.Functions.Worker;
 
 namespace Annoy_o_Bot
 {
-    public class TimeoutFunction
+    public class TimeoutFunction(IGitHubApi gitHubApi, ILogger<TimeoutFunction> log)
     {
-        readonly IGitHubApi gitHubApi;
-        readonly ICosmosClientWrapper cosmosWrapper;
-        readonly ILogger<TimeoutFunction> log;
-
-        public TimeoutFunction(IGitHubApi gitHubApi, ILogger<TimeoutFunction> log)
-        {
-            this.gitHubApi = gitHubApi;
-            this.log = log;
-            this.cosmosWrapper = new CosmosClientWrapper();
-        }
+        readonly ICosmosClientWrapper cosmosWrapper = new CosmosClientWrapper();
 
         [Function("TimeoutFunction")]
         public async Task Run(
