@@ -2,6 +2,7 @@
 using Annoy_o_Bot.Parser;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Serialization;
 using Xunit;
 
 namespace Annoy_o_Bot.Tests.Parser
@@ -99,7 +100,7 @@ namespace Annoy_o_Bot.Tests.Parser
         [InlineData(null)]
         void Must_provide_a_title(string title)
         {
-            reminderDefinition.Title = title;
+            reminderDefinition = reminderDefinition with { Title = title };
             var input = JsonConvert.SerializeObject(reminderDefinition);
 
             var ex = Assert.Throws<ArgumentException>(() => jsonReminderParser.Parse(input));
@@ -114,7 +115,7 @@ namespace Annoy_o_Bot.Tests.Parser
         [InlineData(Interval.Once)]
         void Should_parse_interval_int_value(Interval interval)
         {
-            reminderDefinition.Interval = interval;
+            reminderDefinition = reminderDefinition with { Interval = interval };
             var input = JsonConvert.SerializeObject(reminderDefinition);
 
             var result = jsonReminderParser.Parse(input);
@@ -130,8 +131,8 @@ namespace Annoy_o_Bot.Tests.Parser
         [InlineData(Interval.Once)]
         void Should_parse_interval_string_value(Interval interval)
         {
-            reminderDefinition.Interval = interval;
-            var input = JsonConvert.SerializeObject(reminderDefinition, new StringEnumConverter(false));
+            reminderDefinition = reminderDefinition with { Interval = interval };
+            var input = JsonConvert.SerializeObject(reminderDefinition);
 
             var result = jsonReminderParser.Parse(input);
 

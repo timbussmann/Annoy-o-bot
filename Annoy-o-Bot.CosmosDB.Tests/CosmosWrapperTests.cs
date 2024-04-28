@@ -9,6 +9,16 @@ public class CosmosWrapperTests : IClassFixture<CosmosFixture>
 {
     Container DocumentClient;
 
+    ReminderDefinition reminderDefinition = new()
+    {
+        Assignee = "demo assignee",
+        Date = DateTime.MinValue,
+        Interval = Interval.Monthly,
+        IntervalStep = 4,
+        Labels = new[] {"label1", "label2"},
+        Title = "demo title"
+    };
+
     public CosmosWrapperTests(CosmosFixture cosmosFixture)
     {
         DocumentClient = cosmosFixture.CreateDocumentClient();
@@ -54,7 +64,7 @@ public class CosmosWrapperTests : IClassFixture<CosmosFixture>
             InstallationId = Random.Shared.NextInt64(),
             RepositoryId = Random.Shared.NextInt64(),
             Path = "file/path.txt",
-            Reminder = new ReminderDefinition()
+            Reminder = reminderDefinition
         });
 
         var result = await ExecuteReminderQuery();
@@ -72,7 +82,7 @@ public class CosmosWrapperTests : IClassFixture<CosmosFixture>
             InstallationId = Random.Shared.NextInt64(),
             RepositoryId = Random.Shared.NextInt64(),
             Path = "file/path.txt",
-            Reminder = new ReminderDefinition()
+            Reminder = reminderDefinition
         });
 
         var result = await ExecuteReminderQuery();
@@ -90,7 +100,7 @@ public class CosmosWrapperTests : IClassFixture<CosmosFixture>
             InstallationId = Random.Shared.NextInt64(),
             RepositoryId = Random.Shared.NextInt64(),
             Path = "file/path.txt",
-            Reminder = new ReminderDefinition()
+            Reminder = reminderDefinition
         };
         await wrapper.AddOrUpdateReminder(DocumentClient, existingReminder);
 
@@ -110,15 +120,7 @@ public class CosmosWrapperTests : IClassFixture<CosmosFixture>
             InstallationId = Random.Shared.NextInt64(),
             RepositoryId = Random.Shared.NextInt64(),
             Path = "file/path.txt",
-            Reminder = new ReminderDefinition()
-            {
-                Assignee = "demo assignee",
-                Date = DateTime.MinValue,
-                Interval = Interval.Monthly,
-                IntervalStep = 4,
-                Labels = new[] {"label1", "label2"},
-                Title = "demo title"
-            }
+            Reminder = reminderDefinition
         };
 
         await wrapper.AddOrUpdateReminder(DocumentClient, existingReminder);
@@ -139,7 +141,7 @@ public class CosmosWrapperTests : IClassFixture<CosmosFixture>
             InstallationId = Random.Shared.NextInt64(),
             RepositoryId = Random.Shared.NextInt64(),
             Path = "file/path.txt",
-            Reminder = new ReminderDefinition()
+            Reminder = new ReminderDefinition
             {
                 Assignee = "demo assignee",
                 Date = DateTime.MinValue,
@@ -152,7 +154,7 @@ public class CosmosWrapperTests : IClassFixture<CosmosFixture>
 
         await wrapper.AddOrUpdateReminder(DocumentClient, existingReminder);
 
-        existingReminder.Reminder.Title = "updated title";
+        existingReminder.Reminder = existingReminder.Reminder with { Title = "updated title" };
         await wrapper.AddOrUpdateReminder(DocumentClient, existingReminder);
 
         var updatedReminder = await wrapper.LoadReminder(DocumentClient, existingReminder.Path, existingReminder.InstallationId,

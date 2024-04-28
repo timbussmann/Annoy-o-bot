@@ -7,7 +7,7 @@ namespace Annoy_o_Bot.Tests
 {
     public class YamlReminderParserTests
     {
-        ReminderDefinition reminderDefinition = new ReminderDefinition
+        ReminderDefinition reminderDefinition = new()
         {
             Title = "The title",
             Message = "A message with [a markdown link](/somewhere)",
@@ -63,7 +63,7 @@ Labels:
         [InlineData(null)]
         void Must_provide_a_title(string title)
         {
-            reminderDefinition.Title = title;
+            reminderDefinition = reminderDefinition with { Title = title };
             var input = serializer.Serialize(reminderDefinition);
 
             var ex = Assert.Throws<ArgumentException>(() => yamlReminderParser.Parse(input));
@@ -78,7 +78,7 @@ Labels:
         [InlineData(Interval.Once)]
         void Should_parse_interval_int_value(Interval interval)
         {
-            reminderDefinition.Interval = interval;
+            reminderDefinition = reminderDefinition with { Interval = interval };
             var input = serializer.Serialize(reminderDefinition);
 
             var result = yamlReminderParser.Parse(input);
@@ -94,7 +94,7 @@ Labels:
         [InlineData(Interval.Once)]
         void Should_parse_interval_string_value(Interval interval)
         {
-            reminderDefinition.Interval = interval;
+            reminderDefinition = reminderDefinition with { Interval = interval };
             var input = serializer.Serialize(reminderDefinition);
 
             var result = yamlReminderParser.Parse(input);

@@ -18,7 +18,7 @@ public class When_adding_new_reminder_on_non_default_branch : AcceptanceTest
         {
             Title = "Some title for the new reminder",
             Date = DateTime.UtcNow.AddDays(-1),
-            Interval = Interval.Weekly
+            Interval = Interval.Weekly,
         };
         var callback = appInstallation.CommitNewReminder(reminder, branch: "my-branch");
         var request = CreateCallbackHttpRequest(callback);
@@ -51,7 +51,12 @@ public class When_adding_new_reminder_on_non_default_branch : AcceptanceTest
         var gitHubApi = new FakeGitHubApi();
         var appInstallation = gitHubApi.CreateNewRepository();
 
-        var callback = appInstallation.CommitNewReminder(new ReminderDefinition(), branch: "my-branch");
+        var callback = appInstallation.CommitNewReminder(new ReminderDefinition
+        {
+            Title = null!,
+            Date = default,
+            Interval = Interval.Once
+        }, branch: "my-branch");
         var request = CreateCallbackHttpRequest(callback);
         appInstallation.AddFileContent(callback.Commits[0].Added[0], "Invalid reminder definition");
 

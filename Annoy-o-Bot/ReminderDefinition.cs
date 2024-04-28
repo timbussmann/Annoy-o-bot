@@ -2,15 +2,15 @@ using System;
 
 namespace Annoy_o_Bot
 {
-    public class ReminderDefinition
+    public record ReminderDefinition
     {
-        public string Title { get; set; } = null!;
-        public string? Message { get; set; }
-        public string? Assignee { get; set; }
-        public string[] Labels { get; set; } = Array.Empty<string>();
-        public DateTime Date { get; set; }
-        public Interval Interval { get; set; }
-        public int? IntervalStep { get; set; }
+        public required string Title { get; init; }
+        public string? Message { get; init; }
+        public string? Assignee { get; init; }
+        public string[] Labels { get; init; } = Array.Empty<string>();
+        public required DateTime Date { get; init; }
+        public required Interval Interval { get; init; }
+        public int IntervalStep { get; init; } = 1;
     }
 
     public enum Interval

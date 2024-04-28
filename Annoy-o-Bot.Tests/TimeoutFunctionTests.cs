@@ -20,7 +20,7 @@ namespace Annoy_o_Bot.Tests
         [InlineData("2019.12.24", null, "2020.01.02")]
         [InlineData("2019.12.24", 5, "2020.01.03")]
         [InlineData("2019.12.30", 10, "2020.01.09")]
-        public void Should_calculate_next_reminder_date_for_daily_interval(string nextReminder, int? intervalStep, string expectedResult)
+        public void Should_calculate_next_reminder_date_for_daily_interval(string nextReminder, int intervalStep, string expectedResult)
         {
             var result = CalculateReminder(Interval.Daily, nextReminder, intervalStep);
 
@@ -35,7 +35,7 @@ namespace Annoy_o_Bot.Tests
         [InlineData("2019.12.30", null, "2020.01.06")]
         [InlineData("2019.12.30", 5, "2020.02.03")]
         [InlineData("2019.12.06", 2, "2020.01.03")]
-        public void Should_calculate_next_reminder_date_for_weekly_interval(string nextReminder, int? intervalStep, string expectedResult)
+        public void Should_calculate_next_reminder_date_for_weekly_interval(string nextReminder, int intervalStep, string expectedResult)
         {
             var result = CalculateReminder(Interval.Weekly, nextReminder, intervalStep);
 
@@ -55,7 +55,7 @@ namespace Annoy_o_Bot.Tests
         [InlineData("2019.12.31", 4, "2020.04.30")]
         [InlineData("2019.12.31", 12, "2020.12.31")]
         [InlineData("2019.11.30", 1, "2020.1.30")]
-        public void Should_calculate_next_reminder_date_for_monthly_interval(string nextReminder, int? intervalStep,
+        public void Should_calculate_next_reminder_date_for_monthly_interval(string nextReminder, int intervalStep,
             string expectedResult)
         {
             var result = CalculateReminder(Interval.Monthly, nextReminder, intervalStep);
@@ -74,7 +74,7 @@ namespace Annoy_o_Bot.Tests
         [InlineData("2016.02.29", 4, "2020.02.29")]
         [InlineData("2016.02.29", 8, "2024.02.29")]
         [InlineData("2012.02.29", 4, "2020.02.29")]
-        public void Should_calculate_next_reminder_date_for_yearly_interval(string nextReminder, int? intervalStep,
+        public void Should_calculate_next_reminder_date_for_yearly_interval(string nextReminder, int intervalStep,
             string expectedResult)
         {
             var result = CalculateReminder(Interval.Yearly, nextReminder, intervalStep);
@@ -87,7 +87,7 @@ namespace Annoy_o_Bot.Tests
         [InlineData("2020.01.01", 2, null)]
         [InlineData("2020.01.01", 5, null)]
         [InlineData("2019.12.24", 1, null)]
-        public void Should_not_calculate_next_reminder_date_once(string nextReminder, int? intervalStep,
+        public void Should_not_calculate_next_reminder_date_once(string nextReminder, int intervalStep,
             string expectedResult)
         {
             var result = CalculateReminder(Interval.Once, nextReminder, intervalStep);
@@ -95,7 +95,7 @@ namespace Annoy_o_Bot.Tests
             Assert.Equal(expectedResult, result?.ToString("yyyy.MM.dd"));
         }
 
-        static DateTime? CalculateReminder(Interval interval, string nextReminder, int? intervalStep)
+        static DateTime? CalculateReminder(Interval interval, string nextReminder, int intervalStep)
         {
             var reminder = new ReminderDocument
             {
@@ -103,7 +103,9 @@ namespace Annoy_o_Bot.Tests
                 Reminder = new ReminderDefinition
                 {
                     Interval = interval,
-                    IntervalStep = intervalStep
+                    IntervalStep = intervalStep,
+                    Title = "reminder title",
+                    Date = default
                 }
             };
 
