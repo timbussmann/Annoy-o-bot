@@ -16,7 +16,7 @@ public class When_updating_reminder_not_stored : AcceptanceTest
         var handler = new CallbackHandler(gitHubApi, configurationBuilder.Build(), NullLogger<CallbackHandler>.Instance);
 
         // Update reminder:
-        var updatedReminder = new Reminder
+        var updatedReminder = new ReminderDefinition
         {
             Title = "Updated title for the reminder",
             Date = DateTime.UtcNow.AddDays(-1),
@@ -27,10 +27,10 @@ public class When_updating_reminder_not_stored : AcceptanceTest
         var updateCommit = new CallbackModel.CommitModel
         {
             Id = Guid.NewGuid().ToString(),
-            Modified = new[]
-            {
+            Modified =
+            [
                 createCallback.HeadCommit.Added[0]
-            }
+            ]
         };
         var updateCallback = appInstallation.Commit(updateCommit);
         var updateRequest = CreateCallbackHttpRequest(updateCallback);
@@ -42,8 +42,8 @@ public class When_updating_reminder_not_stored : AcceptanceTest
         Assert.Equal(updateCallback.Installation.Id, appInstallation.InstallationId);
         Assert.Equal(updateCallback.Repository.Id, appInstallation.RepositoryId);
 
-        var cosmosWrapper = new CosmosClientWrapper();
-        var reminderDocument = await cosmosWrapper.LoadReminder(container, updateCallback.HeadCommit.Modified[0],
+        var cosmosWrapper = new CosmosClientWrapper(container);
+        var reminderDocument = await cosmosWrapper.LoadReminder(updateCallback.HeadCommit.Modified[0],
             updateCallback.Installation.Id, updateCallback.Repository.Id);
         Assert.NotNull(reminderDocument);
         Assert.Equal(DateTime.MinValue, reminderDocument.LastReminder);

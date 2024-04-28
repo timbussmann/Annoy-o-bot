@@ -1,23 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Azure.Cosmos;
 
 namespace Annoy_o_Bot.CosmosDB;
 
-public class CosmosClientWrapper : ICosmosClientWrapper
+public class CosmosClientWrapper(Container cosmosContainer) : ICosmosClientWrapper
 {
     public const string dbName = "annoydb";
     public const string collectionId = "reminders";
 
     public const string ReminderQuery = "SELECT TOP 50 * FROM c WHERE GetCurrentDateTime() >= c.NextReminder ORDER BY c.NextReminder ASC";
 
-    public async Task<IList<ReminderDocument>> LoadAllReminders(Container cosmosClient)
+    public async Task<IList<ReminderDocument>> LoadAllReminders()
     {
         var result = new List<ReminderDocument>();
-        var queryFeed = cosmosClient.GetItemQueryIterator<ReminderDocument>();
+        var queryFeed = cosmosContainer.GetItemQueryIterator<ReminderDocument>();
         while (queryFeed.HasMoreResults)
         {
             var queryResponse = await queryFeed.ReadNextAsync();
@@ -27,13 +26,13 @@ public class CosmosClientWrapper : ICosmosClientWrapper
         return result;
     }
 
-    public async Task<ReminderDocument?> LoadReminder(Container cosmosClient, string fileName, long installationId, long repositoryId)
+    public async Task<ReminderDocument?> LoadReminder(string fileName, long installationId, long repositoryId)
     {
-        var documentId = BuildDocumentId(fileName, installationId, repositoryId);
+        var documentId = ReminderDocument.BuildDocumentId(fileName, installationId, repositoryId);
 
         try
         {
-            var existingReminder = await cosmosClient.ReadItemAsync<ReminderDocument>(documentId, new PartitionKey(documentId));
+            var existingReminder = await cosmosContainer.ReadItemAsync<ReminderDocument>(documentId, new PartitionKey(documentId));
             return existingReminder.Resource;
         }
         catch (CosmosException e)
@@ -47,29 +46,22 @@ public class CosmosClientWrapper : ICosmosClientWrapper
         }
     }
 
-    public async Task Delete(Container cosmosClient, string fileName, long installationId, long repositoryId)
+    public async Task Delete(string fileName, long installationId, long repositoryId)
     {
-        var documentId = BuildDocumentId(fileName, installationId, repositoryId);
-        await cosmosClient.DeleteItemAsync<ReminderDocument>(documentId, new PartitionKey(documentId));
+        var documentId = ReminderDocument.BuildDocumentId(fileName, installationId, repositoryId);
+        await cosmosContainer.DeleteItemAsync<ReminderDocument>(documentId, new PartitionKey(documentId));
     }
 
-    public async Task AddOrUpdateReminder(Container cosmosClient, ReminderDocument reminderDocument)
+    public async Task AddOrUpdateReminder(ReminderDocument reminderDocument)
     {
-        reminderDocument.Id ??= BuildDocumentId(reminderDocument.Path, reminderDocument.InstallationId, reminderDocument.RepositoryId);
-        //var collectionUri = UriFactory.CreateDocumentCollectionUri(dbName, collectionId);
         try
         {
-            await cosmosClient.UpsertItemAsync(reminderDocument);
+            await cosmosContainer.UpsertItemAsync(reminderDocument);
         }
         catch (Exception e)
         {
             Console.WriteLine(e);
             throw;
         }
-    }
-
-    static string BuildDocumentId(string fileName, long installationId, long repositoryId)
-    {
-        return $"{installationId}-{repositoryId}-{fileName.Split('/').Last()}";
     }
 }

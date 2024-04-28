@@ -11,18 +11,8 @@ using Microsoft.Extensions.Logging;
 
 namespace Annoy_o_Bot;
 
-public class DetectMissingReminders
+public class DetectMissingReminders(IGitHubApi githubApi, ILogger<DetectMissingReminders> log)
 {
-    static readonly CosmosClientWrapper cosmsClientWrapper = new();
-    readonly IGitHubApi githubApi;
-    readonly ILogger<DetectMissingReminders> log;
-
-    public DetectMissingReminders(IGitHubApi githubApi, ILogger<DetectMissingReminders> log)
-    {
-        this.githubApi = githubApi;
-        this.log = log;
-    }
-
     [Function("DetectMissingReminders")]
     public async Task Run(
         [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)]
@@ -33,7 +23,9 @@ public class DetectMissingReminders
             Connection = "CosmosDBConnection")]
         Container cosmosContainer)
     {
-        var documents = await cosmsClientWrapper.LoadAllReminders(cosmosContainer);
+        CosmosClientWrapper cosmosClientWrapper = new(cosmosContainer);
+
+        var documents = await cosmosClientWrapper.LoadAllReminders();
         log.LogInformation($"Loaded {documents.Count} reminders");
 
         var installations = documents.GroupBy(d => d.InstallationId);
@@ -63,20 +55,20 @@ public class DetectMissingReminders
                     {
                         log.LogError($"Missing reminder {filePath} in repository {byRepository.Key} (installation {byInstallation.Key})");
 
-                        string reminderDefinition = string.Empty;
-                        Reminder reminder;
+                        var reminderDefinitionText = string.Empty;
+                        ReminderDefinition reminderDefinition;
                         try
                         {
-                            reminderDefinition = await repository.ReadFileContent(filePath);
-                            reminder = LoadReminder(filePath, reminderDefinition);
+                            reminderDefinitionText = await repository.ReadFileContent(filePath);
+                            reminderDefinition = LoadReminder(filePath, reminderDefinitionText);
                         }
                         catch (Exception e)
                         {
-                            log.LogError(e, "Unable to parse reminder {path}. Reminder definition: '{reminderContent}'", filePath, reminderDefinition);
+                            log.LogError(e, "Unable to parse reminder {path}. Reminder definition: '{reminderContent}'", filePath, reminderDefinitionText);
                             continue;
                         }
 
-                        await CreateReminder(filePath, reminder, byRepository.Key, byInstallation.Key, cosmosContainer, log);
+                        await CreateReminder(filePath, reminderDefinition, byRepository.Key, byInstallation.Key, cosmosClientWrapper);
                     }
                 }
 
@@ -84,22 +76,15 @@ public class DetectMissingReminders
         }
     }
 
-    async Task CreateReminder(string filePath, Reminder reminder, long repositoryId, long installationId, Container cosmosContainer, ILogger log)
+    async Task CreateReminder(string filePath, ReminderDefinition reminderDefinition, long repositoryId, long installationId, ICosmosClientWrapper cosmosContainer)
     {
-        var reminderDocument = new ReminderDocument
-        {
-            InstallationId = installationId,
-            RepositoryId = repositoryId,
-            Reminder = reminder,
-            NextReminder = new DateTime(reminder.Date.Ticks, DateTimeKind.Utc),
-            Path = filePath
-        };
+        var reminderDocument = ReminderDocument.New(installationId, repositoryId, filePath, reminderDefinition);
 
-        await cosmsClientWrapper.AddOrUpdateReminder(cosmosContainer, reminderDocument);
+        await cosmosContainer.AddOrUpdateReminder(reminderDocument);
         log.LogInformation($"Created missing reminder for {reminderDocument.InstallationId}/{reminderDocument.RepositoryId}/{reminderDocument.Path}, due {reminderDocument.NextReminder}");
     }
 
-    static Reminder LoadReminder(string filePath, string content)
+    static ReminderDefinition LoadReminder(string filePath, string content)
     {
         var parser = ReminderParser.GetParser(filePath);
         if (parser == null)

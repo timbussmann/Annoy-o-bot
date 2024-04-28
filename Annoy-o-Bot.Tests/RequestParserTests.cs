@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using Annoy_o_Bot.GitHub;
 using Xunit;
 
 namespace Annoy_o_Bot.Tests

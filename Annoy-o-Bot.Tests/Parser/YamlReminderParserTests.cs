@@ -7,7 +7,7 @@ namespace Annoy_o_Bot.Tests
 {
     public class YamlReminderParserTests
     {
-        Reminder reminder = new Reminder
+        ReminderDefinition reminderDefinition = new()
         {
             Title = "The title",
             Message = "A message with [a markdown link](/somewhere)",
@@ -24,7 +24,7 @@ namespace Annoy_o_Bot.Tests
         [Fact]
         void Should_parse_reminder_correctly()
         {
-            var input = serializer.Serialize(reminder);
+            var input = serializer.Serialize(reminderDefinition);
 
             var result = yamlReminderParser.Parse(input);
 
@@ -33,7 +33,7 @@ namespace Annoy_o_Bot.Tests
             Assert.Equal("SomeUserHandle;AnotherUserHandle", result.Assignee);
             Assert.Equal(Interval.Monthly, result.Interval);
             Assert.Equal(5, result.IntervalStep);
-            Assert.Equal(new DateTime(2010, 11, 12), reminder.Date);
+            Assert.Equal(new DateTime(2010, 11, 12), reminderDefinition.Date);
             Assert.Contains("Label1", result.Labels);
             Assert.Contains("Label2", result.Labels);
         }
@@ -63,8 +63,8 @@ Labels:
         [InlineData(null)]
         void Must_provide_a_title(string title)
         {
-            reminder.Title = title;
-            var input = serializer.Serialize(reminder);
+            reminderDefinition = reminderDefinition with { Title = title };
+            var input = serializer.Serialize(reminderDefinition);
 
             var ex = Assert.Throws<ArgumentException>(() => yamlReminderParser.Parse(input));
             Assert.Contains("A reminder must provide a non-empty Title property", ex.Message);
@@ -78,8 +78,8 @@ Labels:
         [InlineData(Interval.Once)]
         void Should_parse_interval_int_value(Interval interval)
         {
-            reminder.Interval = interval;
-            var input = serializer.Serialize(reminder);
+            reminderDefinition = reminderDefinition with { Interval = interval };
+            var input = serializer.Serialize(reminderDefinition);
 
             var result = yamlReminderParser.Parse(input);
 
@@ -94,8 +94,8 @@ Labels:
         [InlineData(Interval.Once)]
         void Should_parse_interval_string_value(Interval interval)
         {
-            reminder.Interval = interval;
-            var input = serializer.Serialize(reminder);
+            reminderDefinition = reminderDefinition with { Interval = interval };
+            var input = serializer.Serialize(reminderDefinition);
 
             var result = yamlReminderParser.Parse(input);
 

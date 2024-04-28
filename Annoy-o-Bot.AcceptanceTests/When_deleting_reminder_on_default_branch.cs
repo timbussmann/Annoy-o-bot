@@ -17,7 +17,7 @@ public class When_deleting_reminder_on_default_branch : AcceptanceTest
         var handler = new CallbackHandler(gitHubApi, configurationBuilder.Build(), NullLogger<CallbackHandler>.Instance);
 
         // Create reminder:
-        var reminder = new Reminder
+        var reminder = new ReminderDefinition
         {
             Title = "Some title for the reminder",
             Date = DateTime.UtcNow.AddDays(-1),

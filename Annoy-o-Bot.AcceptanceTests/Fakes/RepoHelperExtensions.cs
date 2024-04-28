@@ -7,14 +7,14 @@ static class RepoHelperExtensions
 {
     private const string DefaultBranch = "main";
 
-    public static CallbackModel CommitNewReminder(this FakeGitHubRepository repo, Reminder reminder,
+    public static CallbackModel CommitNewReminder(this FakeGitHubRepository repo, ReminderDefinition reminderDefinition,
         string? branch = null)
     {
         var filename = Guid.NewGuid().ToString("N");
 
         var commit = CallbackModelHelper.CreateCommitModel(added: $".reminders/{filename}.json");
 
-        repo.AddJsonReminder(commit.Added[0], reminder);
+        repo.AddJsonReminder(commit.Added[0], reminderDefinition);
         return repo.Commit(commit, branch);
     }
 
@@ -31,9 +31,9 @@ static class RepoHelperExtensions
         };
     }
 
-    public static void AddJsonReminder(this FakeGitHubRepository repo, string filePath, Reminder reminder)
+    public static void AddJsonReminder(this FakeGitHubRepository repo, string filePath, ReminderDefinition reminderDefinition)
     {
-        repo.AddFileContent(filePath, JsonConvert.SerializeObject(reminder));
+        repo.AddFileContent(filePath, JsonConvert.SerializeObject(reminderDefinition));
     }
 
 }

@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Annoy_o_Bot
+namespace Annoy_o_Bot.GitHub
 {
     public class FileChanges
     {

@@ -2,13 +2,14 @@
 using Annoy_o_Bot.Parser;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Serialization;
 using Xunit;
 
 namespace Annoy_o_Bot.Tests.Parser
 {
     public class JsonReminderParserTests
     {
-        Reminder reminder = new Reminder
+        ReminderDefinition reminderDefinition = new ReminderDefinition
         {
             Title = "The title",
             Message = "A message",
@@ -24,7 +25,7 @@ namespace Annoy_o_Bot.Tests.Parser
         [Fact]
         void Should_parse_serialized_reminder_correctly()
         {
-            var input = JsonConvert.SerializeObject(reminder);
+            var input = JsonConvert.SerializeObject(reminderDefinition);
 
             var result = jsonReminderParser.Parse(input);
 
@@ -33,7 +34,7 @@ namespace Annoy_o_Bot.Tests.Parser
             Assert.Equal("SomeUserHandle;AnotherUserHandle", result.Assignee);
             Assert.Equal(Interval.Monthly, result.Interval);
             Assert.Equal(5, result.IntervalStep);
-            Assert.Equal(new DateTime(2010, 11, 12), reminder.Date);
+            Assert.Equal(new DateTime(2010, 11, 12), reminderDefinition.Date);
             Assert.Contains("Label1", result.Labels);
             Assert.Contains("Label2", result.Labels);
         }
@@ -60,7 +61,7 @@ namespace Annoy_o_Bot.Tests.Parser
             Assert.Equal("SomeUserHandle;AnotherUserHandle", result.Assignee);
             Assert.Equal(Interval.Monthly, result.Interval);
             Assert.Equal(5, result.IntervalStep);
-            Assert.Equal(new DateTime(2010, 11, 12), reminder.Date);
+            Assert.Equal(new DateTime(2010, 11, 12), reminderDefinition.Date);
             Assert.Contains("Label1", result.Labels);
             Assert.Contains("Label2", result.Labels);
         }
@@ -87,7 +88,7 @@ namespace Annoy_o_Bot.Tests.Parser
             Assert.Equal("SomeUserHandle;AnotherUserHandle", result.Assignee);
             Assert.Equal(Interval.Monthly, result.Interval);
             Assert.Equal(5, result.IntervalStep);
-            Assert.Equal(new DateTime(2010, 11, 12), reminder.Date);
+            Assert.Equal(new DateTime(2010, 11, 12), reminderDefinition.Date);
             Assert.Contains("Label1", result.Labels);
             Assert.Contains("Label2", result.Labels);
         }
@@ -99,8 +100,8 @@ namespace Annoy_o_Bot.Tests.Parser
         [InlineData(null)]
         void Must_provide_a_title(string title)
         {
-            reminder.Title = title;
-            var input = JsonConvert.SerializeObject(reminder);
+            reminderDefinition = reminderDefinition with { Title = title };
+            var input = JsonConvert.SerializeObject(reminderDefinition);
 
             var ex = Assert.Throws<ArgumentException>(() => jsonReminderParser.Parse(input));
             Assert.Contains("A reminder must provide a non-empty Title property", ex.Message);
@@ -114,8 +115,8 @@ namespace Annoy_o_Bot.Tests.Parser
         [InlineData(Interval.Once)]
         void Should_parse_interval_int_value(Interval interval)
         {
-            reminder.Interval = interval;
-            var input = JsonConvert.SerializeObject(reminder);
+            reminderDefinition = reminderDefinition with { Interval = interval };
+            var input = JsonConvert.SerializeObject(reminderDefinition);
 
             var result = jsonReminderParser.Parse(input);
 
@@ -130,8 +131,8 @@ namespace Annoy_o_Bot.Tests.Parser
         [InlineData(Interval.Once)]
         void Should_parse_interval_string_value(Interval interval)
         {
-            reminder.Interval = interval;
-            var input = JsonConvert.SerializeObject(reminder, new StringEnumConverter(false));
+            reminderDefinition = reminderDefinition with { Interval = interval };
+            var input = JsonConvert.SerializeObject(reminderDefinition);
 
             var result = jsonReminderParser.Parse(input);
 

@@ -14,7 +14,7 @@ public class When_adding_new_reminder_on_default_branch : AcceptanceTest
         var gitHubApi = new FakeGitHubApi();
 
         var repository = gitHubApi.CreateNewRepository();
-        var reminder = new Reminder
+        var reminder = new ReminderDefinition
         {
             Title = "Some title for the new reminder",
             Date = DateTime.UtcNow.AddDays(-1),
@@ -49,7 +49,7 @@ public class When_adding_new_reminder_on_default_branch : AcceptanceTest
         var gitHubApi = new FakeGitHubApi();
 
         var repository = gitHubApi.CreateNewRepository();
-        var reminder = new Reminder
+        var reminder = new ReminderDefinition
         {
             Title = "Some title for the new reminder",
             Date = DateTime.UtcNow.AddDays(5),

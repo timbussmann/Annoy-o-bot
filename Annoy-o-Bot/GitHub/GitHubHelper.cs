@@ -7,7 +7,7 @@ using GitHubJwt;
 using Microsoft.Extensions.Logging;
 using Octokit;
 
-namespace Annoy_o_Bot
+namespace Annoy_o_Bot.GitHub
 {
     using System.Security.Cryptography;
     using Microsoft.AspNetCore.Http;

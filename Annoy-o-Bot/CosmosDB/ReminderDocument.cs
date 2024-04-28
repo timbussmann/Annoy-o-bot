@@ -1,27 +1,39 @@
 using System;
+using System.Linq;
 using System.Text.Json.Serialization;
-using Newtonsoft.Json;
 
 namespace Annoy_o_Bot.CosmosDB
 {
     public class ReminderDocument
     {
+        public static ReminderDocument New(long installationId, long repositoryId, string fileName, ReminderDefinition reminderDefinition)
+        {
+            return new ReminderDocument
+            {
+                Id = BuildDocumentId(fileName, installationId, repositoryId),
+                InstallationId = installationId,
+                RepositoryId = repositoryId,
+                Path = fileName,
+                Reminder = reminderDefinition,
+                NextReminder = new DateTime(reminderDefinition.Date.Ticks, DateTimeKind.Utc)
+            };
+        }
 
         // assigning null using the null-forgiving operator because the value will always be set
         //[JsonProperty("id")] Newtonsoft no longer used
         [JsonPropertyName("id")]
-        public string Id { get; set; } = null!;
+        public required string Id { get; set; }
 
-        public required Reminder Reminder { get; set; }
-        public long InstallationId { get; set; }
-        public long RepositoryId { get; set; }
+        public required ReminderDefinition Reminder { get; set; }
+        public required long InstallationId { get; set; }
+        public required long RepositoryId { get; set; }
         public DateTime LastReminder { get; set; }
         public DateTime? NextReminder { get; set; }
-        public string Path { get; set; } = null!;
+        public required string Path { get; set; }
 
         public void CalculateNextReminder(DateTime now)
         {
-            var intervalSteps = Math.Max(Reminder.IntervalStep ?? 1, 1);
+            var intervalSteps = Math.Max(Reminder.IntervalStep, 1);
             for (var i = 0; i < intervalSteps; i++)
             {
                 switch (Reminder.Interval)
@@ -55,6 +67,11 @@ namespace Annoy_o_Bot.CosmosDB
                 }
                 return next;
             }
+        }
+
+        public static string BuildDocumentId(string fileName, long installationId, long repositoryId)
+        {
+            return $"{installationId}-{repositoryId}-{fileName.Split('/').Last()}";
         }
     }
 }

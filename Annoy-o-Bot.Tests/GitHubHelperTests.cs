@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Xunit;
+using Annoy_o_Bot.GitHub;
 
 namespace Annoy_o_Bot.Tests
 {

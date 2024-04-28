@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Annoy_o_Bot.CosmosDB;
 using Annoy_o_Bot.GitHub;
@@ -11,19 +10,8 @@ using Microsoft.Azure.Functions.Worker;
 
 namespace Annoy_o_Bot
 {
-    public class TimeoutFunction
+    public class TimeoutFunction(IGitHubApi gitHubApi, ILogger<TimeoutFunction> log)
     {
-        readonly IGitHubApi gitHubApi;
-        readonly ICosmosClientWrapper cosmosWrapper;
-        readonly ILogger<TimeoutFunction> log;
-
-        public TimeoutFunction(IGitHubApi gitHubApi, ILogger<TimeoutFunction> log)
-        {
-            this.gitHubApi = gitHubApi;
-            this.log = log;
-            this.cosmosWrapper = new CosmosClientWrapper();
-        }
-
         [Function("TimeoutFunction")]
         public async Task Run(
             //[HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
@@ -40,7 +28,9 @@ namespace Annoy_o_Bot
                 Connection = "CosmosDBConnection")]
             Container cosmosContainer)
         {
-            foreach (var reminder in dueReminders)
+            var cosmosWrapper = new CosmosClientWrapper(cosmosContainer);
+
+            foreach (var reminderDocument in dueReminders)
             {
                 try
                 {
@@ -49,50 +39,37 @@ namespace Annoy_o_Bot
 
                     // either never created a reminder before (and next reminder has elapsed)
                     // or the last created reminder was before next reminder (and reminder has elapsed)
-                    if (reminder.LastReminder < reminder.NextReminder)
+                    if (reminderDocument.LastReminder < reminderDocument.NextReminder)
                     {
-                        reminder.CalculateNextReminder(now);
+                        reminderDocument.CalculateNextReminder(now);
 
-                        var newIssue = new NewIssue(reminder.Reminder.Title)
-                        {
-                            Body = reminder.Reminder.Message,
-                        };
-                        foreach (var assignee in reminder.Reminder.Assignee?.Split(';',
-                                     StringSplitOptions.RemoveEmptyEntries) ?? Enumerable.Empty<string>())
-                        {
-                            newIssue.Assignees.Add(assignee);
-                        }
+                        var newIssue = reminderDocument.Reminder.ToGitHubIssue();
 
-                        foreach (var label in reminder.Reminder.Labels)
-                        {
-                            newIssue.Labels.Add(label);
-                        }
+                        log.LogDebug($"Scheduling next due date for reminder {reminderDocument.Id} for {reminderDocument.NextReminder}");
 
-                        log.LogDebug($"Scheduling next due date for reminder {reminder.Id} for {reminder.NextReminder}");
-
-                        var repository = await gitHubApi.GetRepository(reminder.InstallationId, reminder.RepositoryId);
+                        var repository = await gitHubApi.GetRepository(reminderDocument.InstallationId, reminderDocument.RepositoryId);
                         var issue = await repository.CreateIssue(newIssue);
 
-                        log.LogInformation($"Created reminder issue #{issue.Number} based on reminder {reminder.Id}");
+                        log.LogInformation($"Created reminder issue #{issue.Number} based on reminder {reminderDocument.Id}");
 
-                        reminder.LastReminder = now;
-                        await cosmosWrapper.AddOrUpdateReminder(cosmosContainer, reminder);
+                        reminderDocument.LastReminder = now;
+                        await cosmosWrapper.AddOrUpdateReminder(reminderDocument);
                     }
                     else
                     {
                         // Next Reminder might have been reset due to an update, so we will just recalculate it.
-                        reminder.CalculateNextReminder(now);
-                        log.LogWarning($"Found LastReminder ({reminder.LastReminder:g}) > NextReminder ({reminder.NextReminder:g}) in reminder {reminder.Id}");
-                        await cosmosWrapper.AddOrUpdateReminder(cosmosContainer, reminder);
+                        reminderDocument.CalculateNextReminder(now);
+                        log.LogWarning($"Found LastReminder ({reminderDocument.LastReminder:g}) > NextReminder ({reminderDocument.NextReminder:g}) in reminder {reminderDocument.Id}");
+                        await cosmosWrapper.AddOrUpdateReminder(reminderDocument);
                     }
                 }
                 catch (ApiValidationException validationException)
                 {
-                    log.LogCritical(validationException,$"ApiValidation on reminder '{reminder.Id}' exception: {validationException.Message}:{validationException.HttpResponse.Body}");
+                    log.LogCritical(validationException,$"ApiValidation on reminder '{reminderDocument.Id}' exception: {validationException.Message}:{validationException.HttpResponse.Body}");
                 }
                 catch (Exception e)
                 {
-                    log.LogCritical(e, $"Failed to create reminder for {reminder.Id}");
+                    log.LogCritical(e, $"Failed to create reminder for {reminderDocument.Id}");
                 }
             }
         }

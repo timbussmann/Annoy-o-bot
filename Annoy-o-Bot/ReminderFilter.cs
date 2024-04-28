@@ -1,4 +1,6 @@
-﻿namespace Annoy_o_Bot
+﻿using Annoy_o_Bot.GitHub;
+
+namespace Annoy_o_Bot
 {
     public class ReminderFilter
     {
