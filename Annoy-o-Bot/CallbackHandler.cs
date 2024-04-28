@@ -137,14 +137,11 @@ namespace Annoy_o_Bot
         async Task CreateNewReminder(CosmosClientWrapper cosmosWrapper, CallbackModel requestObject, ReminderDefinition reminderDefinition, string fileName,
             IGitHubRepository githubClient)
         {
-            var reminderDocument = new ReminderDocument
-            {
-                InstallationId = requestObject.Installation.Id,
-                RepositoryId = requestObject.Repository.Id,
-                Reminder = reminderDefinition,
-                NextReminder = new DateTime(reminderDefinition.Date.Ticks, DateTimeKind.Utc),
-                Path = fileName
-            };
+            var reminderDocument = ReminderDocument.New(
+                requestObject.Installation.Id,
+                requestObject.Repository.Id,
+                fileName,
+                reminderDefinition);
 
             await cosmosWrapper.AddOrUpdateReminder(reminderDocument);
             await githubClient.CreateComment(requestObject.HeadCommit.Id,

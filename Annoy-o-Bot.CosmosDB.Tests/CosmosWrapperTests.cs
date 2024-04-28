@@ -60,6 +60,7 @@ public class CosmosWrapperTests : IClassFixture<CosmosFixture>
     {
         await CosmosWrapper.AddOrUpdateReminder(new ReminderDocument
         {
+            Id = Guid.NewGuid().ToString(),
             NextReminder = DateTime.UtcNow.AddMinutes(1),
             InstallationId = Random.Shared.NextInt64(),
             RepositoryId = Random.Shared.NextInt64(),
@@ -77,6 +78,7 @@ public class CosmosWrapperTests : IClassFixture<CosmosFixture>
     {
         await CosmosWrapper.AddOrUpdateReminder(new ReminderDocument
         {
+            Id = Guid.NewGuid().ToString(),
             NextReminder = null,
             InstallationId = Random.Shared.NextInt64(),
             RepositoryId = Random.Shared.NextInt64(),
@@ -94,6 +96,7 @@ public class CosmosWrapperTests : IClassFixture<CosmosFixture>
     {
         var existingReminder = new ReminderDocument
         {
+            Id = Guid.NewGuid().ToString(),
             NextReminder = DateTime.UtcNow.AddMinutes(-1),
             InstallationId = Random.Shared.NextInt64(),
             RepositoryId = Random.Shared.NextInt64(),
@@ -110,15 +113,9 @@ public class CosmosWrapperTests : IClassFixture<CosmosFixture>
     [Fact]
     public async Task AddOrUpdateReminder_should_create_missing_reminder()
     {
-        var existingReminder = new ReminderDocument
-        {
-            LastReminder = new DateTime(2010, 10, 10),
-            NextReminder = new DateTime(2012, 12, 12),
-            InstallationId = Random.Shared.NextInt64(),
-            RepositoryId = Random.Shared.NextInt64(),
-            Path = "file/path.txt",
-            Reminder = reminderDefinition
-        };
+        var existingReminder = ReminderDocument.New(Random.Shared.NextInt64(), Random.Shared.NextInt64(), "file/path.txt", reminderDefinition);
+        existingReminder.LastReminder = new DateTime(2010, 10, 10);
+        existingReminder.NextReminder = new DateTime(2012, 12, 12);
 
         await CosmosWrapper.AddOrUpdateReminder(existingReminder);
         var storedReminder = await CosmosWrapper.LoadReminder(existingReminder.Path, existingReminder.InstallationId,
@@ -130,27 +127,12 @@ public class CosmosWrapperTests : IClassFixture<CosmosFixture>
     [Fact]
     public async Task AddOrUpdateReminder_should_update_existing_reminder()
     {
-        var existingReminder = new ReminderDocument
-        {
-            LastReminder = new DateTime(2010, 10, 10),
-            NextReminder = new DateTime(2012, 12, 12),
-            InstallationId = Random.Shared.NextInt64(),
-            RepositoryId = Random.Shared.NextInt64(),
-            Path = "file/path.txt",
-            Reminder = new ReminderDefinition
-            {
-                Assignee = "demo assignee",
-                Date = DateTime.MinValue,
-                Interval = Interval.Monthly,
-                IntervalStep = 4,
-                Labels = new[] { "label1", "label2" },
-                Title = "demo title"
-            }
-        };
+        var existingReminder = ReminderDocument.New(Random.Shared.NextInt64(), Random.Shared.NextInt64(), "file/path.txt", reminderDefinition);
 
         await CosmosWrapper.AddOrUpdateReminder(existingReminder);
 
         existingReminder.Reminder = existingReminder.Reminder with { Title = "updated title" };
+        existingReminder.NextReminder = new DateTime(2020, 02, 20);
         await CosmosWrapper.AddOrUpdateReminder(existingReminder);
 
         var updatedReminder = await CosmosWrapper.LoadReminder(existingReminder.Path, existingReminder.InstallationId,

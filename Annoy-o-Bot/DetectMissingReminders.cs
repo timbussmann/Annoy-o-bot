@@ -68,7 +68,7 @@ public class DetectMissingReminders(IGitHubApi githubApi, ILogger<DetectMissingR
                             continue;
                         }
 
-                        await CreateReminder(filePath, reminderDefinition, byRepository.Key, byInstallation.Key, cosmosClientWrapper, log);
+                        await CreateReminder(filePath, reminderDefinition, byRepository.Key, byInstallation.Key, cosmosClientWrapper);
                     }
                 }
 
@@ -76,16 +76,9 @@ public class DetectMissingReminders(IGitHubApi githubApi, ILogger<DetectMissingR
         }
     }
 
-    async Task CreateReminder(string filePath, ReminderDefinition reminderDefinition, long repositoryId, long installationId, ICosmosClientWrapper cosmosContainer, ILogger log)
+    async Task CreateReminder(string filePath, ReminderDefinition reminderDefinition, long repositoryId, long installationId, ICosmosClientWrapper cosmosContainer)
     {
-        var reminderDocument = new ReminderDocument
-        {
-            InstallationId = installationId,
-            RepositoryId = repositoryId,
-            Reminder = reminderDefinition,
-            NextReminder = new DateTime(reminderDefinition.Date.Ticks, DateTimeKind.Utc),
-            Path = filePath
-        };
+        var reminderDocument = ReminderDocument.New(installationId, repositoryId, filePath, reminderDefinition);
 
         await cosmosContainer.AddOrUpdateReminder(reminderDocument);
         log.LogInformation($"Created missing reminder for {reminderDocument.InstallationId}/{reminderDocument.RepositoryId}/{reminderDocument.Path}, due {reminderDocument.NextReminder}");

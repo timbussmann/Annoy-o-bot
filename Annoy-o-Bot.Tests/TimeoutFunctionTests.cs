@@ -99,6 +99,10 @@ namespace Annoy_o_Bot.Tests
         {
             var reminder = new ReminderDocument
             {
+                Id = Guid.NewGuid()
+                    .ToString(),
+                InstallationId = 123,
+                RepositoryId = 456,
                 NextReminder = DateTime.Parse(nextReminder),
                 Reminder = new ReminderDefinition
                 {
@@ -106,7 +110,8 @@ namespace Annoy_o_Bot.Tests
                     IntervalStep = intervalStep,
                     Title = "reminder title",
                     Date = default
-                }
+                },
+                Path = "file/path.md"
             };
 
             reminder.CalculateNextReminder(Now);

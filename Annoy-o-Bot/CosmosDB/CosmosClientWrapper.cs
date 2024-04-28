@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Azure.Cosmos;
@@ -29,7 +28,7 @@ public class CosmosClientWrapper(Container cosmosContainer) : ICosmosClientWrapp
 
     public async Task<ReminderDocument?> LoadReminder(string fileName, long installationId, long repositoryId)
     {
-        var documentId = BuildDocumentId(fileName, installationId, repositoryId);
+        var documentId = ReminderDocument.BuildDocumentId(fileName, installationId, repositoryId);
 
         try
         {
@@ -49,13 +48,12 @@ public class CosmosClientWrapper(Container cosmosContainer) : ICosmosClientWrapp
 
     public async Task Delete(string fileName, long installationId, long repositoryId)
     {
-        var documentId = BuildDocumentId(fileName, installationId, repositoryId);
+        var documentId = ReminderDocument.BuildDocumentId(fileName, installationId, repositoryId);
         await cosmosContainer.DeleteItemAsync<ReminderDocument>(documentId, new PartitionKey(documentId));
     }
 
     public async Task AddOrUpdateReminder(ReminderDocument reminderDocument)
     {
-        reminderDocument.Id ??= BuildDocumentId(reminderDocument.Path, reminderDocument.InstallationId, reminderDocument.RepositoryId);
         try
         {
             await cosmosContainer.UpsertItemAsync(reminderDocument);
@@ -65,10 +63,5 @@ public class CosmosClientWrapper(Container cosmosContainer) : ICosmosClientWrapp
             Console.WriteLine(e);
             throw;
         }
-    }
-
-    static string BuildDocumentId(string fileName, long installationId, long repositoryId)
-    {
-        return $"{installationId}-{repositoryId}-{fileName.Split('/').Last()}";
     }
 }
