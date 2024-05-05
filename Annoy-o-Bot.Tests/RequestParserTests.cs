@@ -26,7 +26,6 @@ namespace Annoy_o_Bot.Tests
             Assert.Equal("Create trigger4.json", commit.Message);
 
             Assert.Equal("timbussmann", result.Pusher.Name);
-            
         }
 
         [Fact]

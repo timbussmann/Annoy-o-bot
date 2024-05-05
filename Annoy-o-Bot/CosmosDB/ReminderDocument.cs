@@ -33,7 +33,7 @@ namespace Annoy_o_Bot.CosmosDB
 
         public void CalculateNextReminder(DateTime now)
         {
-            var intervalSteps = Math.Max(Reminder.IntervalStep, 1);
+            var intervalSteps = Math.Max(Reminder.IntervalStep ?? 1, 1);
             for (var i = 0; i < intervalSteps; i++)
             {
                 switch (Reminder.Interval)

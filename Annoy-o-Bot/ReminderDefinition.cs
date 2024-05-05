@@ -10,7 +10,7 @@ namespace Annoy_o_Bot
         public string[] Labels { get; init; } = Array.Empty<string>();
         public required DateTime Date { get; init; }
         public required Interval Interval { get; init; }
-        public int IntervalStep { get; init; } = 1;
+        public int? IntervalStep { get; init; }
     }
 
     public enum Interval

@@ -93,6 +93,27 @@ namespace Annoy_o_Bot.Tests.Parser
             Assert.Contains("Label2", result.Labels);
         }
 
+        [Fact]
+        void Should_parse_reminder_using_nullable_interval_step()
+        {
+            var input = """
+                        {
+                            "Title":"The title",
+                            "Message":"A message",
+                            "Assignee":"SomeUserHandle;AnotherUserHandle",
+                            "Labels":["Label1","Label2"],
+                            "Date":"2010-11-12T00:00:00",
+                            "Interval":3,
+                            "IntervalStep":null
+                        }
+                        """;
+
+            var result = jsonReminderParser.Parse(input);
+
+            Assert.Equal("The title", result.Title);
+            Assert.Equal(null, result.IntervalStep);
+        }
+
         [Theory]
         [InlineData("")]
         [InlineData(" ")]
