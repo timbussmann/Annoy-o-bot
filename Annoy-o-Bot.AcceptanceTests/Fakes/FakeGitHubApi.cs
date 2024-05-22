@@ -8,10 +8,6 @@ class FakeGitHubApi : IGitHubApi
 {
     private Dictionary<(long, long), IGitHubRepository> registeredRepos = new();
 
-    public FakeGitHubApi()
-    {
-    }
-
     public FakeGitHubRepository CreateNewRepository()
     {
         var repository = new FakeGitHubRepository(Random.Shared.NextInt64(), Random.Shared.NextInt64());
@@ -27,11 +23,5 @@ class FakeGitHubApi : IGitHubApi
     public Task<IGitHubRepository> GetRepository(long installationId, long repositoryId)
     {
         return Task.FromResult(registeredRepos[(installationId, repositoryId)]);
-    }
-
-    public async Task<CallbackModel> ValidateCallback(HttpRequest callbackRequest)
-    {
-        var content = await new StreamReader(callbackRequest.Body).ReadToEndAsync();
-        return RequestParser.ParseJson(content);
     }
 }

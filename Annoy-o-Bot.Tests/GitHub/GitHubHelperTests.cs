@@ -3,6 +3,7 @@ using System;
 using System.Threading.Tasks;
 using Xunit;
 using Annoy_o_Bot.GitHub;
+using Annoy_o_Bot.GitHub.Callbacks;
 
 namespace Annoy_o_Bot.Tests
 {
@@ -15,7 +16,7 @@ namespace Annoy_o_Bot.Tests
         {
             var gitHubApi = new GitHubApi(NullLoggerFactory.Instance);
 
-            await gitHubApi.ValidateSignature("Hello World!", "secretkey", hash);
+            await GitHubCallbackRequest.ValidateSignature("Hello World!", "secretkey", hash);
         }
 
         [Fact]
@@ -23,7 +24,7 @@ namespace Annoy_o_Bot.Tests
         {
             var gitHubApi = new GitHubApi(NullLoggerFactory.Instance);
             
-            Assert.ThrowsAsync<Exception>(() => gitHubApi.ValidateSignature("Hello Wörld!", "secretkey", "B0D3E5FBD7B71A4539E27257AF48C677E8CAD2F803C2CC87C3164CD4254AFF79"));
+            Assert.ThrowsAsync<Exception>(() => GitHubCallbackRequest.ValidateSignature("Hello Wörld!", "secretkey", "B0D3E5FBD7B71A4539E27257AF48C677E8CAD2F803C2CC87C3164CD4254AFF79"));
         }
     }
 }
