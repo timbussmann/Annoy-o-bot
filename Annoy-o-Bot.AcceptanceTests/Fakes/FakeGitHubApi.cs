@@ -1,4 +1,6 @@
 ﻿using Annoy_o_Bot.GitHub;
+using Annoy_o_Bot.GitHub.Callbacks;
+using Microsoft.AspNetCore.Http;
 
 namespace Annoy_o_Bot.AcceptanceTests.Fakes;
 
@@ -25,5 +27,11 @@ class FakeGitHubApi : IGitHubApi
     public Task<IGitHubRepository> GetRepository(long installationId, long repositoryId)
     {
         return Task.FromResult(registeredRepos[(installationId, repositoryId)]);
+    }
+
+    public async Task<CallbackModel> ValidateCallback(HttpRequest callbackRequest, string secret)
+    {
+        var content = await new StreamReader(callbackRequest.Body).ReadToEndAsync();
+        return RequestParser.ParseJson(content);
     }
 }

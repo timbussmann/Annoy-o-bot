@@ -1,4 +1,6 @@
-﻿namespace Annoy_o_Bot.AcceptanceTests.Fakes;
+﻿using Annoy_o_Bot.GitHub.Callbacks;
+
+namespace Annoy_o_Bot.AcceptanceTests.Fakes;
 
 class CallbackModelHelper
 {
