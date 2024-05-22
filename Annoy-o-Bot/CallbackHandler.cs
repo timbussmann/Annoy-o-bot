@@ -36,9 +36,7 @@ namespace Annoy_o_Bot
                 return new OkResult();
             }
 
-            var commitModel = await gitHubApi.ValidateCallback(req,
-                configuration.GetValue<string>("WebhookSecret") ??
-                throw new Exception("Missing 'WebhookSecret' setting to validate GitHub callbacks."));
+            var commitModel = await gitHubApi.ValidateCallback(req);
 
 
             if (commitModel.HeadCommit == null)

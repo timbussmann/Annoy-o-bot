@@ -8,5 +8,5 @@ public interface IGitHubApi
 {
     Task<IGitHubInstallation> GetInstallation(long installationId);
     Task<IGitHubRepository> GetRepository(long installationId, long repositoryId);
-    Task<CallbackModel> ValidateCallback(HttpRequest callbackRequest, string secret);
+    Task<CallbackModel> ValidateCallback(HttpRequest callbackRequest);
 }

@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using Annoy_o_Bot.GitHub.Callbacks;
+using GitHubJwt;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Octokit;
@@ -33,7 +34,7 @@ public class GitHubApi : IGitHubApi
         return new GitHubRepository(installationClient, repositoryId, loggerFactory.CreateLogger<GitHubRepository>());
     }
 
-    public async Task<CallbackModel> ValidateCallback(HttpRequest callbackRequest, string secret)
+    public async Task<CallbackModel> ValidateCallback(HttpRequest callbackRequest)
     {
         if (!callbackRequest.Headers.TryGetValue("X-Hub-Signature-256", out var sha256SignatureHeaderValue))
         {
@@ -41,6 +42,10 @@ public class GitHubApi : IGitHubApi
         }
 
         var requestBody = await new StreamReader(callbackRequest.Body).ReadToEndAsync();
+
+        var secret = Environment.GetEnvironmentVariable("WebhookSecret") ??
+                     throw new Exception("Missing 'WebhookSecret' setting to validate GitHub callbacks.");
+            
         await ValidateSignature(requestBody, secret, sha256SignatureHeaderValue.ToString().Replace("sha256=", ""));
 
         return RequestParser.ParseJson(requestBody);

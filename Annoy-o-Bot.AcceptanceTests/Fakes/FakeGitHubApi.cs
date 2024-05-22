@@ -29,7 +29,7 @@ class FakeGitHubApi : IGitHubApi
         return Task.FromResult(registeredRepos[(installationId, repositoryId)]);
     }
 
-    public async Task<CallbackModel> ValidateCallback(HttpRequest callbackRequest, string secret)
+    public async Task<CallbackModel> ValidateCallback(HttpRequest callbackRequest)
     {
         var content = await new StreamReader(callbackRequest.Body).ReadToEndAsync();
         return RequestParser.ParseJson(content);
