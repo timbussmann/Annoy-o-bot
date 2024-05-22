@@ -7,6 +7,12 @@ namespace Annoy_o_Bot.GitHub.Callbacks
 {
     public class CallbackModel
     {
+        public static CallbackModel FromJson(string json)
+        {
+            var requestObject = JsonConvert.DeserializeObject<CallbackModel>(json);
+            return requestObject;
+        }
+        
         public InstallationModel Installation { get; set; }
         public RepositoryModel Repository { get; set; }
         public CommitModel[] Commits { get; set; }

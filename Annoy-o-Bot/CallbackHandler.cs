@@ -31,7 +31,7 @@ namespace Annoy_o_Bot
         {
             var cosmosWrapper = new CosmosClientWrapper(cosmosContainer);
 
-            if (!IsGitCommitCallback(req))
+            if (!GitHubCallbackRequest.IsGitCommitCallback(req, log))
             {
                 return new OkResult();
             }
@@ -141,23 +141,6 @@ namespace Annoy_o_Bot
                         Conclusion = CheckConclusion.Success
                     }, log);
             }
-        }
-
-        bool IsGitCommitCallback(HttpRequest req)
-        {
-            if (!req.Headers.TryGetValue("X-GitHub-Event", out var callbackEvent) || callbackEvent != "push")
-            {
-                // Check for known callback types that we don't care
-                if (callbackEvent != "check_suite") // ignore check_suite events
-                {
-                    // record unknown callback types to further analyze them
-                    log.LogWarning($"Non-push callback. 'X-GitHub-Event': '{callbackEvent}'");
-                }
-
-                return false;
-            }
-
-            return true;
         }
 
         async Task CreateNewReminder(CosmosClientWrapper cosmosWrapper, CallbackModel requestObject, ReminderDefinition reminderDefinition, string fileName,
