@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Annoy_o_Bot.CosmosDB;
@@ -75,25 +74,33 @@ namespace Annoy_o_Bot
         async Task ApplyReminderDefinitions(FileChanges reminderChanges, CallbackModel requestObject,
             IGitHubRepository githubClient, CosmosClientWrapper cosmosWrapper, FileChanges fileChanges)
         {
-            var newReminders = await LoadReminders(reminderChanges.New, requestObject, githubClient);
-            foreach (var (fileName, reminder) in newReminders)
+            foreach (var reminderPath in reminderChanges.New)
             {
-                await CreateNewReminder(cosmosWrapper, requestObject, reminder, fileName, githubClient);
+                var newReminder = await LoadReminder(requestObject, githubClient, reminderPath);
+                if (newReminder != null)
+                {
+                    await CreateNewReminder(cosmosWrapper, requestObject, newReminder, reminderPath, githubClient);
+                }
             }
 
-            var updatedReminders = await LoadReminders(reminderChanges.Updated, requestObject, githubClient);
-            foreach (var (fileName, updatedReminder) in updatedReminders)
+            foreach (var reminderPath in reminderChanges.Updated)
             {
-                var existingReminder = await cosmosWrapper.LoadReminder(fileName, requestObject.Installation.Id, requestObject.Repository.Id);
+                var existingReminderDefinition = await LoadReminder(requestObject, githubClient, reminderPath);
+                if (existingReminderDefinition == null)
+                {
+                    continue;
+                }
+
+                var existingReminder = await cosmosWrapper.LoadReminder(reminderPath, requestObject.Installation.Id, requestObject.Repository.Id);
                 if (existingReminder is null)
                 {
-                    await CreateNewReminder(cosmosWrapper, requestObject, updatedReminder, fileName, githubClient);
+                    await CreateNewReminder(cosmosWrapper, requestObject, existingReminderDefinition, reminderPath, githubClient);
                 }
                 else
                 {
-                    existingReminder.Reminder = updatedReminder;
+                    existingReminder.Reminder = existingReminderDefinition;
                     // recalculate next reminder due time from scratch:
-                    existingReminder.NextReminder = new DateTime(updatedReminder.Date.Ticks, DateTimeKind.Utc);
+                    existingReminder.NextReminder = new DateTime(existingReminderDefinition.Date.Ticks, DateTimeKind.Utc);
                     if (existingReminder.LastReminder >= existingReminder.NextReminder)
                     {
                         // reminder start date is in the past, re-calculate next reminder due date with interval based on new start date.
@@ -102,7 +109,7 @@ namespace Annoy_o_Bot
 
                     await cosmosWrapper.AddOrUpdateReminder(existingReminder);
                     await githubClient.CreateComment(requestObject.HeadCommit.Id,
-                        $"Updated reminder '{updatedReminder.Title}' for {existingReminder.NextReminder:D}");
+                        $"Updated reminder '{existingReminderDefinition.Title}' for {existingReminder.NextReminder:D}");
                 }
             }
 
@@ -112,11 +119,17 @@ namespace Annoy_o_Bot
         async Task ValidateReminderDefinitions(FileChanges reminderChanges, CallbackModel requestObject,
             IGitHubRepository githubClient)
         {
-            List<(string, ReminderDefinition)> newReminders;
+            var atLeastOneReminderChecked = false;
             try
             {
-                newReminders = await LoadReminders(reminderChanges.New, requestObject, githubClient);
-                newReminders.AddRange(await LoadReminders(reminderChanges.Updated, requestObject, githubClient));
+                foreach (var reminder in reminderChanges.New.Concat(reminderChanges.Updated))
+                {
+                    var reminderDefinition = await LoadReminder(requestObject, githubClient, reminder);
+                    if (reminderDefinition != null)
+                    {
+                        atLeastOneReminderChecked = true;
+                    }
+                }
             }
             catch (Exception e)
             {
@@ -132,7 +145,7 @@ namespace Annoy_o_Bot
                 throw;
             }
 
-            if (newReminders.Any())
+            if (atLeastOneReminderChecked)
             {
                 await TryCreateCheckRun(githubClient, requestObject.Repository.Id,
                     new NewCheckRun("annoy-o-bot", requestObject.HeadCommit.Id)
@@ -170,24 +183,18 @@ namespace Annoy_o_Bot
             }
         }
 
-        static async Task<List<(string, ReminderDefinition)>> LoadReminders(ICollection<string> filePaths, CallbackModel requestObject, IGitHubRepository installationClient)
+        static async Task<ReminderDefinition?> LoadReminder(CallbackModel requestObject, IGitHubRepository installationClient, string filePath)
         {
-            var results = new List<(string, ReminderDefinition)>(filePaths.Count); // potentially lower but never higher than number of files
-            foreach (var filePath in filePaths)
+            var parser = ReminderParser.GetParser(filePath);
+            if (parser == null)
             {
-                var parser = ReminderParser.GetParser(filePath);
-                if (parser == null)
-                {
-                    // unsupported file type
-                    continue;
-                }
-
-                var content = await installationClient.ReadFileContent(filePath, requestObject.Ref);
-                var reminder = parser.Parse(content);
-                results.Add((filePath, reminder));
+                // unsupported file type
+                return null;
             }
 
-            return results;
+            var content = await installationClient.ReadFileContent(filePath, requestObject.Ref);
+            var reminder = parser.Parse(content);
+            return reminder;
         }
 
         async Task DeleteRemovedReminders(ICollection<string> deletedFiles, CosmosClientWrapper cosmosWrapper, CallbackModel requestObject, IGitHubRepository client)
