@@ -1,11 +1,6 @@
 ﻿using System;
-using System.IO;
-using System.Security.Cryptography;
-using System.Text;
 using System.Threading.Tasks;
-using Annoy_o_Bot.GitHub.Callbacks;
 using GitHubJwt;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Octokit;
 

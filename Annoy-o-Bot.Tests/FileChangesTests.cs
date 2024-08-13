@@ -1,10 +1,9 @@
-﻿using Annoy_o_Bot.GitHub.Callbacks;
+﻿using Annoy_o_Bot.GitHub;
+using Annoy_o_Bot.GitHub.Callbacks;
+using Xunit;
 
-namespace Annoy_o_Bot.Tests
+namespace Annoy_o_Bot
 {
-    using Annoy_o_Bot.GitHub;
-    using Xunit;
-
     public class FileChangesTests
     {
         [Fact]
