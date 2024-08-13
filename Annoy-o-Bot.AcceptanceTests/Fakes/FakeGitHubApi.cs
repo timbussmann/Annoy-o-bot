@@ -1,14 +1,12 @@
 ﻿using Annoy_o_Bot.GitHub;
+using Annoy_o_Bot.GitHub.Callbacks;
+using Microsoft.AspNetCore.Http;
 
 namespace Annoy_o_Bot.AcceptanceTests.Fakes;
 
 class FakeGitHubApi : IGitHubApi
 {
     private Dictionary<(long, long), IGitHubRepository> registeredRepos = new();
-
-    public FakeGitHubApi()
-    {
-    }
 
     public FakeGitHubRepository CreateNewRepository()
     {

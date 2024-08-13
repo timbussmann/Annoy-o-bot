@@ -1,5 +1,6 @@
 ﻿using Annoy_o_Bot.AcceptanceTests.Fakes;
 using Annoy_o_Bot.CosmosDB;
+using Annoy_o_Bot.GitHub.Callbacks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
