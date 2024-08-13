@@ -11,7 +11,7 @@ namespace Annoy_o_Bot.GitHub.Callbacks;
 
 public class GitHubCallbackRequest
 {
-    public static async Task<CallbackModel?> Validate(HttpRequest callbackRequest, string gitHubSecret, ILogger log)
+    public static async Task<GitPushCallbackModel?> Validate(HttpRequest callbackRequest, string gitHubSecret, ILogger log)
     {
         if (!IsGitCommitCallback(callbackRequest, log))
         {
@@ -27,7 +27,7 @@ public class GitHubCallbackRequest
 
         await ValidateSignature(requestBody, gitHubSecret, sha256SignatureHeaderValue.ToString().Replace("sha256=", ""));
 
-        return JsonConvert.DeserializeObject<CallbackModel>(requestBody);
+        return JsonConvert.DeserializeObject<GitPushCallbackModel>(requestBody);
     }
 
     static bool IsGitCommitCallback(HttpRequest callbackRequest, ILogger log)

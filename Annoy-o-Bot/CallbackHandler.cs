@@ -34,12 +34,8 @@ namespace Annoy_o_Bot
             var secret = configuration.GetValue<string>("WebhookSecret") ??
                          throw new Exception("Missing 'WebhookSecret' setting to validate GitHub callbacks.");
             var commitModel = await GitHubCallbackRequest.Validate(req, secret, log);
-            if (commitModel == null)
-            {
-                return new OkResult();
-            }
 
-            if (commitModel.HeadCommit == null)
+            if (commitModel?.HeadCommit == null) 
             {
                 // no commits on push (e.g. branch delete)
                 return new OkResult();
@@ -71,7 +67,7 @@ namespace Annoy_o_Bot
             return new OkResult();
         }
 
-        async Task ApplyReminderDefinitions(FileChanges reminderChanges, CallbackModel requestObject,
+        async Task ApplyReminderDefinitions(FileChanges reminderChanges, GitPushCallbackModel requestObject,
             IGitHubRepository githubClient, CosmosClientWrapper cosmosWrapper, FileChanges fileChanges)
         {
             var newReminders = await LoadReminders(reminderChanges.New, requestObject, githubClient);
@@ -108,7 +104,7 @@ namespace Annoy_o_Bot
             await DeleteRemovedReminders(fileChanges.Deleted, cosmosWrapper, requestObject, githubClient);
         }
 
-        async Task ValidateReminderDefinitions(FileChanges reminderChanges, CallbackModel requestObject,
+        async Task ValidateReminderDefinitions(FileChanges reminderChanges, GitPushCallbackModel requestObject,
             IGitHubRepository githubClient)
         {
             List<(string, ReminderDefinition)> newReminders;
@@ -142,7 +138,7 @@ namespace Annoy_o_Bot
             }
         }
 
-        async Task CreateNewReminder(CosmosClientWrapper cosmosWrapper, CallbackModel requestObject, ReminderDefinition reminderDefinition, string fileName,
+        async Task CreateNewReminder(CosmosClientWrapper cosmosWrapper, GitPushCallbackModel requestObject, ReminderDefinition reminderDefinition, string fileName,
             IGitHubRepository githubClient)
         {
             var reminderDocument = ReminderDocument.New(
@@ -169,7 +165,7 @@ namespace Annoy_o_Bot
             }
         }
 
-        static async Task<List<(string, ReminderDefinition)>> LoadReminders(ICollection<string> filePaths, CallbackModel requestObject, IGitHubRepository installationClient)
+        static async Task<List<(string, ReminderDefinition)>> LoadReminders(ICollection<string> filePaths, GitPushCallbackModel requestObject, IGitHubRepository installationClient)
         {
             var results = new List<(string, ReminderDefinition)>(filePaths.Count); // potentially lower but never higher than number of files
             foreach (var filePath in filePaths)
@@ -189,7 +185,7 @@ namespace Annoy_o_Bot
             return results;
         }
 
-        async Task DeleteRemovedReminders(ICollection<string> deletedFiles, CosmosClientWrapper cosmosWrapper, CallbackModel requestObject, IGitHubRepository client)
+        async Task DeleteRemovedReminders(ICollection<string> deletedFiles, CosmosClientWrapper cosmosWrapper, GitPushCallbackModel requestObject, IGitHubRepository client)
         {
             foreach (var deletedReminder in deletedFiles)
             {

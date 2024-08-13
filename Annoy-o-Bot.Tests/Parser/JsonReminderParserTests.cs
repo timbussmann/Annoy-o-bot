@@ -1,8 +1,6 @@
 ﻿using System;
 using Annoy_o_Bot.Parser;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using Newtonsoft.Json.Serialization;
 using Xunit;
 
 namespace Annoy_o_Bot.Tests.Parser
