@@ -25,7 +25,7 @@ public class When_updating_reminder_not_stored : AcceptanceTest
         };
         var createCallback = appInstallation.CommitNewReminder(updatedReminder);
 
-        var updateCommit = new CallbackModel.CommitModel
+        var updateCommit = new GitPushCallbackModel.CommitModel
         {
             Id = Guid.NewGuid().ToString(),
             Modified =

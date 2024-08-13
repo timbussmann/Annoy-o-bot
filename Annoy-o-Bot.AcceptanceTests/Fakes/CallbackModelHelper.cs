@@ -4,9 +4,9 @@ namespace Annoy_o_Bot.AcceptanceTests.Fakes;
 
 class CallbackModelHelper
 {
-    public static CallbackModel.CommitModel CreateCommitModel(string? added = null, string? modified = null, string? removed = null)
+    public static GitPushCallbackModel.CommitModel CreateCommitModel(string? added = null, string? modified = null, string? removed = null)
     {
-        var commit = new CallbackModel.CommitModel
+        var commit = new GitPushCallbackModel.CommitModel
         {
             Id = Guid.NewGuid().ToString(),
             Added = added != null ? new[] { added } : Array.Empty<string>(),

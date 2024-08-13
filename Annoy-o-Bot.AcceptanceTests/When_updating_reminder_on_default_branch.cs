@@ -38,7 +38,7 @@ public class When_updating_reminder_on_default_branch : AcceptanceTest
         };
         appInstallation.AddFileContent(createCallback.Commits[0].Added[0], JsonSerializer.Serialize(updatedReminder));
 
-        var updateCommit = new CallbackModel.CommitModel
+        var updateCommit = new GitPushCallbackModel.CommitModel
         {
             Id = Guid.NewGuid().ToString(),
             Modified = new[]

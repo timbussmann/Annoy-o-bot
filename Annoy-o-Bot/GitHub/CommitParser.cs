@@ -12,7 +12,7 @@ namespace Annoy_o_Bot.GitHub
 
     public class CommitParser
     {
-        public static FileChanges GetChanges(CallbackModel.CommitModel[] commits)
+        public static FileChanges GetChanges(GitPushCallbackModel.CommitModel[] commits)
         {
             var changes = new FileChanges();
 

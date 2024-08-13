@@ -4,12 +4,12 @@ using Xunit;
 
 namespace Annoy_o_Bot.GitHub.Callbacks;
 
-public class CallbackModelTests
+public class GitPushCallbackModelTests
 {
     [Fact]
     public void NewFileAdded()
     {
-        var result = JsonConvert.DeserializeObject<CallbackModel>(File.ReadAllText("requests/fileAdded.json"));
+        var result = JsonConvert.DeserializeObject<GitPushCallbackModel>(File.ReadAllText("requests/fileAdded.json"));
 
         Assert.Equal("refs/heads/master", result.Ref);
 
@@ -31,7 +31,7 @@ public class CallbackModelTests
     [Fact]
     public void MultiCommit()
     {
-        var result = JsonConvert.DeserializeObject<CallbackModel>(File.ReadAllText("requests/multiCommitFileHistory.json"));
+        var result = JsonConvert.DeserializeObject<GitPushCallbackModel>(File.ReadAllText("requests/multiCommitFileHistory.json"));
 
         Assert.Equal(4, result.Commits.Length);
 
@@ -61,7 +61,7 @@ public class CallbackModelTests
     [Fact]
     public void BranchDeleted()
     {
-        var result = JsonConvert.DeserializeObject<CallbackModel>(File.ReadAllText("requests/branchDeleted.json"));
+        var result = JsonConvert.DeserializeObject<GitPushCallbackModel>(File.ReadAllText("requests/branchDeleted.json"));
 
         Assert.Null(result.HeadCommit);
         Assert.Empty(result.Commits);

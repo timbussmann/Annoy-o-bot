@@ -2,8 +2,8 @@ namespace Annoy_o_Bot.GitHub.Callbacks;
 
 public static class CallbackModelExtensions
 {
-    public static bool IsDefaultBranch(this CallbackModel callbackModel)
+    public static bool IsDefaultBranch(this GitPushCallbackModel gitPushCallbackModel)
     {
-        return callbackModel.Ref.EndsWith($"/{callbackModel.Repository.DefaultBranch}");
+        return gitPushCallbackModel.Ref.EndsWith($"/{gitPushCallbackModel.Repository.DefaultBranch}");
     }
 }

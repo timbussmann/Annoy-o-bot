@@ -5,7 +5,7 @@ using Newtonsoft.Json;
 
 namespace Annoy_o_Bot.GitHub.Callbacks;
 
-public class CallbackModel
+public class GitPushCallbackModel
 {
     public InstallationModel Installation { get; set; }
     public RepositoryModel Repository { get; set; }
