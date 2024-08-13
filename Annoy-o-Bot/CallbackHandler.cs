@@ -31,14 +31,13 @@ namespace Annoy_o_Bot
         {
             var cosmosWrapper = new CosmosClientWrapper(cosmosContainer);
 
-            if (!GitHubCallbackRequest.IsGitCommitCallback(req, log))
+            var secret = configuration.GetValue<string>("WebhookSecret") ??
+                         throw new Exception("Missing 'WebhookSecret' setting to validate GitHub callbacks.");
+            var commitModel = await GitHubCallbackRequest.Validate(req, secret, log);
+            if (commitModel == null)
             {
                 return new OkResult();
             }
-
-            var secret = configuration.GetValue<string>("WebhookSecret") ??
-                         throw new Exception("Missing 'WebhookSecret' setting to validate GitHub callbacks.");
-            var commitModel = await GitHubCallbackRequest.Validate(req, secret);
 
             if (commitModel.HeadCommit == null)
             {
