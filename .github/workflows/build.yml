@@ -9,6 +9,9 @@ on:
   pull_request:
     branches: [ "master" ]
 
+env:
+  REGION_OVERRIDE: ${{ vars.REGION_OVERRIDE }}
+
 jobs:
   build:
 
@@ -30,8 +33,6 @@ jobs:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
     - name: Setup Cosmos DB
       uses: Particular/setup-cosmosdb-action@v1.0.0
-      env:
-        REGION_OVERRIDE: ${{ vars.REGION_OVERRIDE }}
       with:
         connection-string-name: Annoy_O_Bot_ComsmosConnectionString
         azure-credentials: ${{ secrets.AZURE_CREDENTIALS }}
