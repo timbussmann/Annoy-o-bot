@@ -8,10 +8,7 @@ on:
     branches: [ "master" ]
   pull_request:
     branches: [ "master" ]
-
-env:
-  REGION_OVERRIDE: ${{ vars.REGION_OVERRIDE }}
-
+    
 jobs:
   build:
 
