@@ -153,15 +153,7 @@ namespace Annoy_o_Bot
 
         private static async Task TryCreateCheckRun(IGitHubRepository installationClient, long repositoryId, NewCheckRun checkRun, ILogger logger)
         {
-            // Ignore check run failures for now. Check run permissions were added later, so users might not have granted permissions to add check runs.
-            try
-            {
-                await installationClient.CreateCheckRun(checkRun);
-            }
-            catch (Exception e)
-            {
-                logger.LogWarning(e, $"Failed to create check run for repository {repositoryId}.");
-            }
+            await installationClient.CreateCheckRun(checkRun);
         }
 
         static async Task<List<(string, ReminderDefinition)>> LoadReminders(ICollection<string> filePaths, GitPushCallbackModel requestObject, IGitHubRepository installationClient)

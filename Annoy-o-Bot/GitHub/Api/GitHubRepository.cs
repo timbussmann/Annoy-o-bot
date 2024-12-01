@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -6,24 +7,14 @@ using Octokit;
 
 namespace Annoy_o_Bot.GitHub.Api;
 
-public class GitHubRepository : IGitHubRepository
+public class GitHubRepository(GitHubClient gitHubClient, long repositoryId, ILogger<GitHubRepository> logger)
+    : IGitHubRepository
 {
-    readonly GitHubClient installationClient;
-    readonly long repositoryId;
-    readonly ILogger<GitHubRepository> logger;
-
-    public GitHubRepository(GitHubClient gitHubClient, long repositoryId, ILogger<GitHubRepository> logger)
-    {
-        this.repositoryId = repositoryId;
-        this.logger = logger;
-        installationClient = gitHubClient;
-    }
-
     public async Task<IList<string>> ReadAllRemindersFromDefaultBranch()
     {
         try
         {
-            var reminders = await installationClient.Repository.Content.GetAllContents(repositoryId, ".reminders");
+            var reminders = await gitHubClient.Repository.Content.GetAllContents(repositoryId, ".reminders");
             return reminders.Select(content => content.Path).ToList();
         }
         catch (NotFoundException e)
@@ -39,13 +30,13 @@ public class GitHubRepository : IGitHubRepository
 
         if (branchReference == null)
         {
-            contents = await installationClient.Repository.Content.GetAllContentsByRef(
+            contents = await gitHubClient.Repository.Content.GetAllContentsByRef(
                 repositoryId,
                 filePath);
         }
         else
         {
-            contents = await installationClient.Repository.Content.GetAllContentsByRef(
+            contents = await gitHubClient.Repository.Content.GetAllContentsByRef(
                 repositoryId,
                 filePath,
                 branchReference);
@@ -54,14 +45,22 @@ public class GitHubRepository : IGitHubRepository
         return contents.First().Content;
     }
 
-    public Task CreateCheckRun(NewCheckRun checkRun)
+    public async Task CreateCheckRun(NewCheckRun checkRun)
     {
-        return installationClient.Check.Run.Create(repositoryId, checkRun);
+        try
+        {
+            await gitHubClient.Check.Run.Create(repositoryId, checkRun);
+        }
+        catch (Exception e)
+        {
+            // Ignore check run failures for now. Check run permissions were added later, so users might not have granted permissions to add check runs.
+            logger.LogWarning(e, $"Failed to create check run for repository {repositoryId}.");
+        }
     }
 
     public Task CreateComment(string commitId, string comment)
     {
-        return installationClient.Repository.Comment.Create(
+        return gitHubClient.Repository.Comment.Create(
             repositoryId,
             commitId,
             new NewCommitComment(comment));
@@ -69,6 +68,6 @@ public class GitHubRepository : IGitHubRepository
 
     public Task<Issue> CreateIssue(NewIssue issue)
     {
-        return installationClient.Issue.Create(repositoryId, issue);
+        return gitHubClient.Issue.Create(repositoryId, issue);
     }
 }
