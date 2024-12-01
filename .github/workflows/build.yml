@@ -8,11 +8,11 @@ on:
     branches: [ "master" ]
   pull_request:
     branches: [ "master" ]
-
+    
 jobs:
   build:
 
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
@@ -24,20 +24,15 @@ jobs:
       run: dotnet restore
     - name: Build
       run: dotnet build --no-restore
-    # - name: Azure login
-    #   uses: azure/login@v2.2.0
-    #   with:
-    #     creds: ${{ secrets.AZURE_CREDENTIALS }}
-    # - name: Setup Cosmos DB
-    #   uses: Particular/setup-cosmosdb-action@v1.0.0
-    #   with:
-    #     connection-string-name: Annoy_O_Bot_ComsmosConnectionString
-    #     azure-credentials: ${{ secrets.AZURE_CREDENTIALS }}
-    #     tag: Annoy_O_Bot_Tests
-    - name: Start Azure Cosmos DB emulator
-      run: |
-        Write-Host "Launching Cosmos DB Emulator"
-        Import-Module "$env:ProgramFiles\Azure Cosmos DB Emulator\PSModules\Microsoft.Azure.CosmosDB.Emulator"
-        Start-CosmosDbEmulator
+    - name: Azure login
+      uses: azure/login@v2.2.0
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    - name: Setup Cosmos DB
+      uses: Particular/setup-cosmosdb-action@v1.0.0
+      with:
+        connection-string-name: Annoy_O_Bot_ComsmosConnectionString
+        azure-credentials: ${{ secrets.AZURE_CREDENTIALS }}
+        tag: Annoy_O_Bot_Tests
     - name: Test
       run: dotnet test --no-build --verbosity normal
