@@ -1,5 +1,4 @@
-﻿using System.Net;
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using System.Text;
 using Annoy_o_Bot.CosmosDB;
 using Annoy_o_Bot.GitHub;
@@ -13,7 +12,7 @@ using Xunit;
 namespace Annoy_o_Bot.AcceptanceTests;
 
 [Collection("CosmosDB")]
-public class AcceptanceTest
+public class AcceptanceTest(CosmosFixture cosmosFixture) : IAsyncLifetime
 {
     protected const string SignatureKey = "mysecretkey";
 
@@ -21,7 +20,7 @@ public class AcceptanceTest
 
     protected Container container;
 
-    public AcceptanceTest(CosmosFixture cosmosFixture)
+    public async Task InitializeAsync()
     {
         configurationBuilder = new ConfigurationBuilder();
         configurationBuilder.AddInMemoryCollection(new Dictionary<string, string>
@@ -30,7 +29,19 @@ public class AcceptanceTest
         });
 
         container = cosmosFixture.CreateDocumentClient();
-        SetupCollection().GetAwaiter().GetResult();
+        await SetupCollection();
+    }
+
+    public async Task DisposeAsync()
+    {
+        try
+        {
+            await container.DeleteContainerAsync();
+        }
+        catch (Exception)
+        {
+            // ignored
+        }
     }
 
     async Task SetupCollection()
