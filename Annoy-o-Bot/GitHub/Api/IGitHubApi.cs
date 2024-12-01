@@ -1,8 +1,6 @@
 ﻿using System.Threading.Tasks;
-using Annoy_o_Bot.GitHub.Callbacks;
-using Microsoft.AspNetCore.Http;
 
-namespace Annoy_o_Bot.GitHub;
+namespace Annoy_o_Bot.GitHub.Api;
 
 public interface IGitHubApi
 {

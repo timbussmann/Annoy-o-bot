@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Annoy_o_Bot.CosmosDB;
@@ -9,7 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Octokit;
 using Annoy_o_Bot.Parser;
-using Annoy_o_Bot.GitHub;
+using Annoy_o_Bot.GitHub.Api;
 using Annoy_o_Bot.GitHub.Callbacks;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
@@ -51,17 +50,17 @@ namespace Annoy_o_Bot
                 commitsToConsider = [commitsToConsider.Last()];
             }
 
-            var githubClient = await gitHubApi.GetRepository(commitModel.Installation.Id, commitModel.Repository.Id);
+            var githubRepository = await gitHubApi.GetRepository(commitModel.Installation.Id, commitModel.Repository.Id);
             var fileChanges = CommitParser.GetChanges(commitsToConsider);
             var reminderChanges = ReminderFilter.FilterReminders(fileChanges);
 
             if (commitModel.IsDefaultBranch())
             {
-                await ApplyReminderDefinitions(reminderChanges, commitModel, githubClient, cosmosWrapper, fileChanges);
+                await ApplyReminderDefinitions(reminderChanges, commitModel, githubRepository, cosmosWrapper, fileChanges);
             }
             else
             {
-                await ValidateReminderDefinitions(reminderChanges, commitModel, githubClient);
+                await ValidateReminderDefinitions(reminderChanges, commitModel, githubRepository);
             }
 
             return new OkResult();

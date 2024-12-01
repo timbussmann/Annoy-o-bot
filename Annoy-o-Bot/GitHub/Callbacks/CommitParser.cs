@@ -1,13 +1,12 @@
 ﻿using System.Collections.Generic;
-using Annoy_o_Bot.GitHub.Callbacks;
 
-namespace Annoy_o_Bot.GitHub
+namespace Annoy_o_Bot.GitHub.Callbacks
 {
     public class FileChanges
     {
-        public HashSet<string> New { get; set; } = new HashSet<string>();
-        public HashSet<string> Updated { get; set; } = new HashSet<string>();
-        public HashSet<string> Deleted { get; set; } = new HashSet<string>();
+        public HashSet<string> New { get; set; } = [];
+        public HashSet<string> Updated { get; set; } = [];
+        public HashSet<string> Deleted { get; set; } = [];
     }
 
     public class CommitParser

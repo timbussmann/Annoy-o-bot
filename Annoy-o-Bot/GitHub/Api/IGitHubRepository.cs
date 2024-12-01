@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Octokit;
 
-namespace Annoy_o_Bot.GitHub;
+namespace Annoy_o_Bot.GitHub.Api;
 
 public interface IGitHubRepository
 {

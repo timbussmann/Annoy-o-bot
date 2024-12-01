@@ -1,7 +1,6 @@
 ﻿
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Microsoft.Azure.Cosmos;
 
 namespace Annoy_o_Bot.CosmosDB;
 

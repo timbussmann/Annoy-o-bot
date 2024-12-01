@@ -1,7 +1,7 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
 using Annoy_o_Bot.CosmosDB;
-using Annoy_o_Bot.GitHub;
+using Annoy_o_Bot.GitHub.Api;
 using Annoy_o_Bot.GitHub.Callbacks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Azure.Cosmos;

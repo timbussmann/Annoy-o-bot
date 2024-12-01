@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Annoy_o_Bot.CosmosDB;
-using Annoy_o_Bot.GitHub;
+using Annoy_o_Bot.GitHub.Api;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Logging;
 using Octokit;
