@@ -114,26 +114,24 @@ namespace Annoy_o_Bot
             }
             catch (Exception e)
             {
-                await TryCreateCheckRun(githubClient, requestObject.Repository.Id,
-                    new NewCheckRun("annoy-o-bot", requestObject.HeadCommit.Id)
-                    {
-                        Status = CheckStatus.Completed,
-                        Conclusion = CheckConclusion.Failure,
-                        Output = new NewCheckRunOutput(
-                            "Invalid reminder definition",
-                            "The provided reminder seems to be invalid or incorrect." + e.Message)
-                    }, log);
+                await githubClient.CreateCheckRun(new NewCheckRun("annoy-o-bot", requestObject.HeadCommit.Id)
+                {
+                    Status = CheckStatus.Completed,
+                    Conclusion = CheckConclusion.Failure,
+                    Output = new NewCheckRunOutput(
+                        "Invalid reminder definition",
+                        "The provided reminder seems to be invalid or incorrect." + e.Message)
+                });
                 throw;
             }
 
             if (newReminders.Any())
             {
-                await TryCreateCheckRun(githubClient, requestObject.Repository.Id,
-                    new NewCheckRun("annoy-o-bot", requestObject.HeadCommit.Id)
-                    {
-                        Status = CheckStatus.Completed,
-                        Conclusion = CheckConclusion.Success
-                    }, log);
+                await githubClient.CreateCheckRun(new NewCheckRun("annoy-o-bot", requestObject.HeadCommit.Id)
+                {
+                    Status = CheckStatus.Completed,
+                    Conclusion = CheckConclusion.Success
+                });
             }
         }
 
@@ -149,11 +147,6 @@ namespace Annoy_o_Bot
             await cosmosWrapper.AddOrUpdateReminder(reminderDocument);
             await githubClient.CreateComment(requestObject.HeadCommit.Id,
                 $"Created reminder '{reminderDefinition.Title}' for {reminderDefinition.Date:D}");
-        }
-
-        private static async Task TryCreateCheckRun(IGitHubRepository installationClient, long repositoryId, NewCheckRun checkRun, ILogger logger)
-        {
-            await installationClient.CreateCheckRun(checkRun);
         }
 
         static async Task<List<(string, ReminderDefinition)>> LoadReminders(ICollection<string> filePaths, GitPushCallbackModel requestObject, IGitHubRepository installationClient)
