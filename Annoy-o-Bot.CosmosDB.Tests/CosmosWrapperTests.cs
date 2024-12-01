@@ -5,9 +5,10 @@ using Xunit;
 
 namespace Annoy_o_Bot.CosmosDB.Tests;
 
-public class CosmosWrapperTests : IClassFixture<CosmosFixture>
+public class CosmosWrapperTests(CosmosFixture cosmosFixture) : IClassFixture<CosmosFixture>, IAsyncLifetime
 {
     Container DocumentClient;
+
     CosmosClientWrapper CosmosWrapper;
 
     ReminderDefinition reminderDefinition = new()
@@ -20,19 +21,28 @@ public class CosmosWrapperTests : IClassFixture<CosmosFixture>
         Title = "demo title"
     };
 
-    public CosmosWrapperTests(CosmosFixture cosmosFixture)
+    public async Task InitializeAsync()
     {
         DocumentClient = cosmosFixture.CreateDocumentClient();
+        
         CosmosWrapper = new CosmosClientWrapper(DocumentClient);
+
+        await DocumentClient.Database.Client.CreateDatabaseIfNotExistsAsync(CosmosClientWrapper.dbName);
         try
         {
-            DocumentClient.DeleteContainerAsync().GetAwaiter().GetResult();
+            await DocumentClient.DeleteContainerAsync();
         }
         catch (CosmosException e) when (e.StatusCode == HttpStatusCode.NotFound)
         {
         }
 
-        DocumentClient.Database.CreateContainerAsync(new ContainerProperties(CosmosClientWrapper.collectionId, "/id")).GetAwaiter().GetResult();
+        await DocumentClient.Database.CreateContainerIfNotExistsAsync(
+            new ContainerProperties(CosmosClientWrapper.collectionId, "/id"));
+    }
+
+    public Task DisposeAsync()
+    {
+        return Task.CompletedTask;
     }
 
     [Fact]
