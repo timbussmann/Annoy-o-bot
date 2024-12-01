@@ -58,7 +58,7 @@ public class GitHubCallbackRequest
 
         if (!string.Equals(sha256Signature, hashString, StringComparison.OrdinalIgnoreCase))
         {
-            throw new Exception($"Computed request payload signature ('{hashString}') does not match provided signature ('{sha256Signature}'). Signed text: '{signedText}'");
+            throw new Exception($"Computed request payload signature ('sha256={hashString}') does not match provided signature ('sha256={sha256Signature}'). Signed text: '{signedText}'");
         }
     }
 }
