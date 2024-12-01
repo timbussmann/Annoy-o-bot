@@ -28,12 +28,8 @@ public class CosmosWrapperTests : IClassFixture<CosmosFixture>
         {
             DocumentClient.DeleteContainerAsync().GetAwaiter().GetResult();
         }
-        catch (CosmosException e)
+        catch (CosmosException e) when (e.StatusCode == HttpStatusCode.NotFound)
         {
-            if (e.StatusCode != HttpStatusCode.NotFound)
-            {
-                throw;
-            }
         }
 
         DocumentClient.Database.CreateContainerAsync(new ContainerProperties(CosmosClientWrapper.collectionId, "/id")).GetAwaiter().GetResult();

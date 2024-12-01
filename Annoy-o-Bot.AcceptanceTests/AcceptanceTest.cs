@@ -40,12 +40,8 @@ public class AcceptanceTest
         {
             await database.GetContainer(CosmosClientWrapper.collectionId).DeleteContainerAsync();
         }
-        catch (CosmosException e)
+        catch (CosmosException e) when (e.StatusCode == HttpStatusCode.NotFound)
         {
-            if (e.StatusCode != HttpStatusCode.NotFound)
-            {
-                throw;
-            }
         }
 
         await database.CreateContainerAsync(CosmosClientWrapper.collectionId, "/id");
