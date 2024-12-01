@@ -39,4 +39,6 @@ jobs:
 #        azure-credentials: ${{ secrets.AZURE_CREDENTIALS }}
 #        tag: Annoy_O_Bot_Tests
     - name: Test
+      env:
+        CosmosDBConnectionString: ${{ secrets.CosmosDBConnectionString }}
       run: dotnet test --no-build --verbosity normal
