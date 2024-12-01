@@ -36,15 +36,8 @@ public class AcceptanceTest
     async Task SetupCollection()
     {
         var database = container.Database;
-        try
-        {
-            await database.GetContainer(CosmosClientWrapper.collectionId).DeleteContainerAsync();
-        }
-        catch (CosmosException e) when (e.StatusCode == HttpStatusCode.NotFound)
-        {
-        }
-
-        await database.CreateContainerAsync(CosmosClientWrapper.collectionId, "/id");
+        await database.Client.CreateDatabaseIfNotExistsAsync(CosmosClientWrapper.dbName);
+        await database.CreateContainerIfNotExistsAsync(CosmosClientWrapper.collectionId, "/id");
     }
 
     protected async Task CreateDueReminders(IGitHubApi gitHubApi)
