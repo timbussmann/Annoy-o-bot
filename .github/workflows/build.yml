@@ -9,6 +9,10 @@ on:
   pull_request:
     branches: [ "master" ]
     
+concurrency:
+  group: ci-tests
+  cancel-in-progress: false
+    
 jobs:
   build:
 
@@ -24,15 +28,15 @@ jobs:
       run: dotnet restore
     - name: Build
       run: dotnet build --no-restore
-    - name: Azure login
-      uses: azure/login@v2.2.0
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
-    - name: Setup Cosmos DB
-      uses: Particular/setup-cosmosdb-action@v1.0.0
-      with:
-        connection-string-name: Annoy_O_Bot_ComsmosConnectionString
-        azure-credentials: ${{ secrets.AZURE_CREDENTIALS }}
-        tag: Annoy_O_Bot_Tests
+#    - name: Azure login
+#      uses: azure/login@v2.2.0
+#      with:
+#        creds: ${{ secrets.AZURE_CREDENTIALS }}
+#    - name: Setup Cosmos DB
+#      uses: Particular/setup-cosmosdb-action@v1.0.0
+#      with:
+#        connection-string-name: Annoy_O_Bot_ComsmosConnectionString
+#        azure-credentials: ${{ secrets.AZURE_CREDENTIALS }}
+#        tag: Annoy_O_Bot_Tests
     - name: Test
       run: dotnet test --no-build --verbosity normal
