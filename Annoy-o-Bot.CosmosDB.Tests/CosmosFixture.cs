@@ -7,6 +7,8 @@ namespace Annoy_o_Bot.AcceptanceTests;
 
 public class CosmosFixture
 {
+    const string EmulatorConnectionString = "AccountEndpoint=https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==";
+
     public Container CreateDocumentClient()
     {
         /*
@@ -20,7 +22,8 @@ public class CosmosFixture
             Serializer = new WorkerCosmosSerializer()
         };
         // CosmosDB emulator connection settings
-        var cosmosClient = new CosmosClient("AccountEndpoint=https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==", options);
+        var cosmosConnectinString = Environment.GetEnvironmentVariable("CosmosDBConnectionString") ?? EmulatorConnectionString;
+        var cosmosClient = new CosmosClient(cosmosConnectinString, options);
         return cosmosClient.GetContainer(CosmosClientWrapper.dbName, CosmosClientWrapper.collectionId);
     }
 }
