@@ -1,0 +1,45 @@
+# This workflow will build a .NET project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
+
+name: .NET
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+    
+concurrency:
+  group: ci-tests
+  cancel-in-progress: false
+    
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+    - name: Restore dependencies
+      run: dotnet restore
+    - name: Build
+      run: dotnet build --no-restore
+#    - name: Azure login
+#      uses: azure/login@v2.2.0
+#      with:
+#        creds: ${{ secrets.AZURE_CREDENTIALS }}
+#    - name: Setup Cosmos DB
+#      uses: Particular/setup-cosmosdb-action@v1.0.0
+#      with:
+#        connection-string-name: Annoy_O_Bot_ComsmosConnectionString
+#        azure-credentials: ${{ secrets.AZURE_CREDENTIALS }}
+#        tag: Annoy_O_Bot_Tests
+    - name: Test
+      env:
+        CosmosDBConnectionString: ${{ secrets.CosmosDBConnectionString }}
+      # current using MaxCpuCount 1 as both CosmosDB.Tests and AcceptanceTests use the same cosmos DB instance and tests fail otherwise
+      run: dotnet test --no-build --verbosity normal -maxcpucount:1
