@@ -41,4 +41,5 @@ jobs:
     - name: Test
       env:
         CosmosDBConnectionString: ${{ secrets.CosmosDBConnectionString }}
-      run: dotnet test --no-build --verbosity normal
+      # current using MaxCpuCount 1 as both CosmosDB.Tests and AcceptanceTests use the same cosmos DB instance and tests fail otherwise
+      run: dotnet test --no-build --verbosity normal -maxcpucount:1
