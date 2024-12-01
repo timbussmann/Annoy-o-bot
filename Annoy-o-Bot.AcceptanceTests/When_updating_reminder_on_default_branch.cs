@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 using Annoy_o_Bot.AcceptanceTests.Fakes;
-using Annoy_o_Bot.CosmosDB;
+using Annoy_o_Bot.GitHub.Callbacks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
@@ -37,7 +37,7 @@ public class When_updating_reminder_on_default_branch : AcceptanceTest
         };
         appInstallation.AddFileContent(createCallback.Commits[0].Added[0], JsonSerializer.Serialize(updatedReminder));
 
-        var updateCommit = new CallbackModel.CommitModel
+        var updateCommit = new GitPushCallbackModel.CommitModel
         {
             Id = Guid.NewGuid().ToString(),
             Modified = new[]

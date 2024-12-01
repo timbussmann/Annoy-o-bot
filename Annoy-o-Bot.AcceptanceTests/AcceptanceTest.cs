@@ -1,7 +1,8 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
 using Annoy_o_Bot.CosmosDB;
-using Annoy_o_Bot.GitHub;
+using Annoy_o_Bot.GitHub.Api;
+using Annoy_o_Bot.GitHub.Callbacks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
@@ -67,11 +68,11 @@ public class AcceptanceTest(CosmosFixture cosmosFixture) : IAsyncLifetime
         await timeoutHandler.Run(null!, reminders, container);
     }
 
-    protected static HttpRequest CreateCallbackHttpRequest(CallbackModel callback)
+    protected static HttpRequest CreateCallbackHttpRequest(GitPushCallbackModel gitPushCallback)
     {
         var httpContext = new DefaultHttpContext();
         var request = httpContext.Request;
-        var messageContent = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(callback, Formatting.None));
+        var messageContent = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(gitPushCallback, Formatting.None));
         request.Body = new MemoryStream(messageContent);
         request.Headers.Add("X-GitHub-Event", "push");
         request.Headers.Add("X-Hub-Signature-256",

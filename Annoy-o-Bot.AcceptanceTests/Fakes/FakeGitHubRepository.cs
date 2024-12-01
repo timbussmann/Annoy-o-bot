@@ -1,4 +1,4 @@
-﻿using Annoy_o_Bot.GitHub;
+﻿using Annoy_o_Bot.GitHub.Api;
 using Octokit;
 
 namespace Annoy_o_Bot.AcceptanceTests.Fakes;

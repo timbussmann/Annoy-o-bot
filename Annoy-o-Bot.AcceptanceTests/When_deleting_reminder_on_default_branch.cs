@@ -1,6 +1,4 @@
-﻿using System.Text.Json;
-using Annoy_o_Bot.AcceptanceTests.Fakes;
-using Annoy_o_Bot.CosmosDB;
+﻿using Annoy_o_Bot.AcceptanceTests.Fakes;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;

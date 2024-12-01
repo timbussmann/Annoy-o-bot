@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace Annoy_o_Bot.GitHub;
+namespace Annoy_o_Bot.GitHub.Api;
 
 public interface IGitHubApi
 {

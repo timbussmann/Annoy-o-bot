@@ -1,8 +1,8 @@
-﻿using Octokit;
+﻿using System;
 using System.Linq;
-using System;
+using Octokit;
 
-namespace Annoy_o_Bot.GitHub;
+namespace Annoy_o_Bot.GitHub.Api;
 
 public static class ReminderMappingExtensions
 {

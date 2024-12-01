@@ -1,14 +1,14 @@
-﻿namespace Annoy_o_Bot.Tests
-{
-    using Annoy_o_Bot.GitHub;
-    using Xunit;
+﻿using Annoy_o_Bot.GitHub.Callbacks;
+using Xunit;
 
+namespace Annoy_o_Bot
+{
     public class FileChangesTests
     {
         [Fact]
         public void Should_return_empty_changes_when_no_commits()
         {
-            var result = CommitParser.GetChanges(new CallbackModel.CommitModel[0]);
+            var result = CommitParser.GetChanges(new GitPushCallbackModel.CommitModel[0]);
 
             Assert.Empty(result.New);
             Assert.Empty(result.Deleted);
@@ -20,19 +20,19 @@
         {
             var commitModel = new[]
             {
-                new CallbackModel.CommitModel
+                new GitPushCallbackModel.CommitModel
                 {
                     Added = new []{ "a1" },
                     Modified = new []{ "m1" },
                     Removed = new [] { "r1"}
                 },
-                new CallbackModel.CommitModel
+                new GitPushCallbackModel.CommitModel
                 {
                     Added = new []{ "a2" },
                     Modified = new []{ "m2" },
                     Removed = new [] { "r2"}
                 },
-                new CallbackModel.CommitModel
+                new GitPushCallbackModel.CommitModel
                 {
                     Added = new []{ "a3" },
                     Modified = new []{ "m3" },
@@ -58,11 +58,11 @@
         {
             var commitModel = new[]
             {
-                new CallbackModel.CommitModel
+                new GitPushCallbackModel.CommitModel
                 {
                     Modified = new []{ "file1" },
                 },
-                new CallbackModel.CommitModel
+                new GitPushCallbackModel.CommitModel
                 {
                     Modified = new [] { "file1"}
                 }
@@ -79,11 +79,11 @@
         {
             var commitModel = new[]
             {
-                new CallbackModel.CommitModel
+                new GitPushCallbackModel.CommitModel
                 {
                     Modified = new []{ "file1" },
                 },
-                new CallbackModel.CommitModel
+                new GitPushCallbackModel.CommitModel
                 {
                     Removed = new [] { "file1"}
                 }
@@ -101,15 +101,15 @@
         {
             var commitModel = new[]
             {
-                new CallbackModel.CommitModel
+                new GitPushCallbackModel.CommitModel
                 {
                     Added = new []{ "file1" },
                 },
-                new CallbackModel.CommitModel
+                new GitPushCallbackModel.CommitModel
                 {
                     Modified = new []{ "file1" },
                 },
-                new CallbackModel.CommitModel
+                new GitPushCallbackModel.CommitModel
                 {
                     Removed = new [] { "file1"}
                 }
@@ -128,15 +128,15 @@
         {
             var commitModel = new[]
             {
-                new CallbackModel.CommitModel
+                new GitPushCallbackModel.CommitModel
                 {
                     Added = new []{ "file1" },
                 },
-                new CallbackModel.CommitModel
+                new GitPushCallbackModel.CommitModel
                 {
                     Modified = new []{ "file1" },
                 },
-                new CallbackModel.CommitModel
+                new GitPushCallbackModel.CommitModel
                 {
                     Modified = new [] { "file1"}
                 }
@@ -155,15 +155,15 @@
         {
             var commitModel = new[]
             {
-                new CallbackModel.CommitModel
+                new GitPushCallbackModel.CommitModel
                 {
                     Modified = new []{ "file1" },
                 },
-                new CallbackModel.CommitModel
+                new GitPushCallbackModel.CommitModel
                 {
                     Removed = new []{ "file1" },
                 },
-                new CallbackModel.CommitModel
+                new GitPushCallbackModel.CommitModel
                 {
                     Added = new [] { "file1"}
                 }

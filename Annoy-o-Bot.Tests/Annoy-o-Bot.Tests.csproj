@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <RootNamespace>Annoy_o_Bot.Tests</RootNamespace>
+    <RootNamespace>Annoy_o_Bot</RootNamespace>
 
     <IsPackable>false</IsPackable>
   </PropertyGroup>

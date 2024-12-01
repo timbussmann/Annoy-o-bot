@@ -1,4 +1,4 @@
-using Annoy_o_Bot.GitHub;
+using Annoy_o_Bot.GitHub.Api;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 

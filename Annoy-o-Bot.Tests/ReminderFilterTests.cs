@@ -1,4 +1,4 @@
-﻿using Annoy_o_Bot.GitHub;
+﻿using Annoy_o_Bot.GitHub.Callbacks;
 
 namespace Annoy_o_Bot.Tests
 {

@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Octokit;
 
-namespace Annoy_o_Bot.GitHub;
+namespace Annoy_o_Bot.GitHub.Api;
 
 class GitHubInstallation : IGitHubInstallation
 {
