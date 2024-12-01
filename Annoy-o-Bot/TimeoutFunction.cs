@@ -43,12 +43,10 @@ namespace Annoy_o_Bot
                     {
                         reminderDocument.CalculateNextReminder(now);
 
-                        var newIssue = reminderDocument.Reminder.ToGitHubIssue();
-
                         log.LogDebug($"Scheduling next due date for reminder {reminderDocument.Id} for {reminderDocument.NextReminder}");
 
                         var repository = await gitHubApi.GetRepository(reminderDocument.InstallationId, reminderDocument.RepositoryId);
-                        var issue = await repository.CreateIssue(newIssue);
+                        var issue = await repository.CreateIssue(reminderDocument.Reminder.ToGitHubIssue());
 
                         log.LogInformation($"Created reminder issue #{issue.Number} based on reminder {reminderDocument.Id}");
 
